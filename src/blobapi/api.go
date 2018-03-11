@@ -53,8 +53,8 @@ func (b *BlobStoreApiClient) route(path string) string {
     return fmt.Sprintf("%s%s", b.DefaultUrl, path)
 }
 
-func (b *BlobStoreApiClient) UploadStream(filename string, stream *bufio.Reader, contentType string) error {
-    response, err := b.http.Post(b.route(filename), contentType, stream)
+func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, contentType string) error {
+    response, err := b.http.Post(b.route(path), contentType, stream)
     if err != nil {
         return err
     }
@@ -71,14 +71,14 @@ func (b *BlobStoreApiClient) UploadStream(filename string, stream *bufio.Reader,
     return nil
 }
 
-func (b *BlobStoreApiClient) UploadFile(filename string, source string, contentType string) error {
+func (b *BlobStoreApiClient) UploadFile(path string, source string, contentType string) error {
     file, err := os.Open(source)
     if err != nil {
         return err
     }
 
     fileReader := bufio.NewReader(file)
-    return b.UploadStream(filename, fileReader, contentType)
+    return b.UploadStream(path, fileReader, contentType)
 }
 
 func (b *BlobStoreApiClient) GetFileContents(path string) (string, error) {
