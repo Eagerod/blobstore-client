@@ -3,11 +3,13 @@ PREFIX := $(ENV_PREFIX)
 SOURCES := main.go
 BIN_NAME := blob
 
-all:
+$(BIN_NAME):
 	$(PREFIX) go build $(SOURCE) -o $(BIN_NAME)
 
-go:
-	./$(BIN_NAME)
+all: $(BIN_NAME)
 
 release:
 	echo "thoon"
+
+clean:
+	rm $(BIN_NAME)
