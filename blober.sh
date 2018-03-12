@@ -1,6 +1,6 @@
 # This is the universal installer for the blobfile utility.
 
-BLOB_LATEST_VERSION="1"
+BLOB_LATEST_VERSION=""
 
 if [[ $# -ne 1 && -z "$BLOB_LATEST_VERSION" ]]; then
     echo "Must provide a version to download"
