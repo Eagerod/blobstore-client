@@ -47,5 +47,4 @@ func main() {
         fmt.Println(parser.Usage(err))
         os.Exit(1)
     }
-
 }
