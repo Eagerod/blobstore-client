@@ -25,7 +25,7 @@ type IBlobStoreApiClient interface {
     UploadFile(path string, source string, contentType string) error
 
     GetFileContents(path string) (string, error)
-    // DownloadFile(path string, dest string) error
+    DownloadFile(path string, dest string) error
     CatFile(path string) error
 }
 
@@ -97,6 +97,16 @@ func (b *BlobStoreApiClient) GetFileContents(path string) (string, error) {
     }
 
     return string(body), nil
+}
+
+func (b *BlobStoreApiClient) DownloadFile(path, dest string) error {
+    str, err := b.GetFileContents(path)
+    if err != nil {
+        return err
+    }
+
+    err = ioutil.WriteFile(dest, []byte(str), 0644)
+    return err
 }
 
 func (b *BlobStoreApiClient) CatFile(path string) error {
