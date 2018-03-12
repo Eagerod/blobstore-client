@@ -4,7 +4,8 @@ PREFIX := $(ENV_PREFIX)
 SOURCES := src/main.go
 
 BIN_ROOT := bin
-BIN_NAME := bin/blob
+BIN_FILE := blob
+BIN_NAME := $(BIN_ROOT)/$(BIN_FILE)
 
 UPLOAD_PATH := clientlib
 
@@ -13,6 +14,9 @@ $(BIN_NAME):
 	$(PREFIX) go build -o $(BIN_NAME) $(SOURCES)
 
 all: $(BIN_NAME)
+
+install: $(BIN_NAME)
+	cp $(BIN_NAME) /usr/local/bin/$(BIN_FILE)
 
 build/%.zip:
 	mkdir -p build
