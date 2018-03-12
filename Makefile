@@ -1,4 +1,4 @@
-ENV_PREFIX := GOPATH=`pwd`
+ENV_PREFIX := GOPATH=`pwd`:$$HOME/go
 PREFIX := $(ENV_PREFIX)
 
 SOURCES := src/main.go
