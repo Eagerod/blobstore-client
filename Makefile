@@ -1,4 +1,4 @@
-ENV_PREFIX := GOPATH=`pwd`:$$HOME/go
+ENV_PREFIX := GOPATH=`pwd`:`pwd`/deps
 PREFIX := $(ENV_PREFIX)
 
 SOURCES := src/main.go
@@ -6,6 +6,9 @@ SOURCES := src/main.go
 BIN_ROOT := bin
 BIN_FILE := blob
 BIN_NAME := $(BIN_ROOT)/$(BIN_FILE)
+
+DEPS_DIR := deps/src
+DEPS := $(foreach f,$(shell cat deps.txt),$(DEPS_DIR)/$(f))
 
 UPLOAD_PATH := clientlib
 
@@ -15,11 +18,22 @@ $(BIN_NAME):
 	mkdir -p $(BIN_ROOT)
 	$(PREFIX) go build -o $(BIN_NAME) $(SOURCES)
 
+.PHONY: $(DEPS_DIR)/%
+$(DEPS_DIR)/%:
+	mkdir -p $(DEPS_DIR)
+	if [ ! -d "$(DEPS_DIR)/$$(echo $* | awk -F '@' '{print $$1}')" ]; then \
+		git clone "https://$$(echo $* | awk -F '@' '{print $$1}')" "$(DEPS_DIR)/$$(echo $* | awk -F '@' '{print $$1}')"; \
+	fi
+	cd $(DEPS_DIR)/$$(echo $* | awk -F '@' '{print $$1}') && git remote update && git checkout $$(echo $* | awk -F '@' '{print $$2}')
+
+.PHONY: dependencies
+dependencies: $(DEPS)
+
 .PHONY: all
 all: $(BIN_NAME)
 
 .PHONY: install
-install: $(BIN_NAME)
+install: dependencies $(BIN_NAME)
 	cp $(BIN_NAME) /usr/local/bin/$(BIN_FILE)
 
 build/%.zip:
@@ -40,4 +54,5 @@ release: upload/$(BLOB_LATEST_VERSION).zip build/installer.sh
 .PHONY: clean
 clean:
 	rm -rf build || true
+	rm -rf $(DEPS_DIR) || true
 	rm $(BIN_NAME) || true
