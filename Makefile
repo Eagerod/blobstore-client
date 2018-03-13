@@ -15,8 +15,10 @@ $(BIN_NAME):
 	mkdir -p $(BIN_ROOT)
 	$(PREFIX) go build -o $(BIN_NAME) $(SOURCES)
 
+.PHONY: all
 all: $(BIN_NAME)
 
+.PHONY: install
 install: $(BIN_NAME)
 	cp $(BIN_NAME) /usr/local/bin/$(BIN_FILE)
 
@@ -31,9 +33,11 @@ build/installer.sh:
 upload/%.zip: $(BIN_NAME) build/%.zip
 	$(BIN_NAME) upload -f "$(UPLOAD_PATH)/$*.zip" -t "application/zip" -s "build/$*.zip"
 
+.PHONY: release
 release: upload/$(BLOB_LATEST_VERSION).zip build/installer.sh
 	$(BIN_NAME) upload -f "$(UPLOAD_PATH)/installer.sh" -t "text/x-shellscript" -s build/installer.sh
 
+.PHONY: clean
 clean:
 	rm -rf build || true
 	rm $(BIN_NAME) || true
