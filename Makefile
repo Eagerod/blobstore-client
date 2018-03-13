@@ -9,12 +9,13 @@ BIN_NAME := $(BIN_ROOT)/$(BIN_FILE)
 
 DEPS_DIR := deps/src
 DEPS := $(foreach f,$(shell cat deps.txt),$(DEPS_DIR)/$(f))
+DEV_DEPS := $(foreach f,$(shell cat dev_deps.txt),$(DEPS_DIR)/$(f))
 
 UPLOAD_PATH := clientlib
 
 BLOB_LATEST_VERSION := $(shell git tag -ln | tail -1 | awk '{print $$1}')
 
-$(BIN_NAME):
+$(BIN_NAME): dependencies
 	mkdir -p $(BIN_ROOT)
 	$(PREFIX) go build -o $(BIN_NAME) $(SOURCES)
 
@@ -29,12 +30,19 @@ $(DEPS_DIR)/%:
 .PHONY: dependencies
 dependencies: $(DEPS)
 
+.PHONY: dev_dependencies
+dev_dependencies: $(DEV_DEPS)
+
 .PHONY: all
 all: $(BIN_NAME)
 
 .PHONY: install
 install: dependencies $(BIN_NAME)
 	cp $(BIN_NAME) /usr/local/bin/$(BIN_FILE)
+
+.PHONY: test
+test:
+	$(PREFIX) go test -v 'blobapi'
 
 build/%.zip:
 	mkdir -p build

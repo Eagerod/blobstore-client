@@ -6,8 +6,8 @@ import (
     "fmt"
     "io/ioutil"
     "net/http"
+    "net/url"
     "os"
-    "strings"
     "time"
 )
 
@@ -41,16 +41,17 @@ func NewBlobStoreApiClient(url, readAcl, writeAcl string) *BlobStoreApiClient {
 
 
 func (b *BlobStoreApiClient) route(path string) string {
-    defaultClash := strings.HasSuffix(b.DefaultUrl, "/")
-    pathClash := strings.HasPrefix(path, "/")
-
-    if defaultClash && pathClash {
-        return fmt.Sprintf("%s/%s", b.DefaultUrl[:len(b.DefaultUrl)-1], path[1:])
-    } else if !(defaultClash && pathClash) {
-        return fmt.Sprintf("%s/%s", b.DefaultUrl, path)
+    pathUrlComponent, err := url.Parse(path)
+    if err != nil {
+        panic(err)
     }
 
-    return fmt.Sprintf("%s%s", b.DefaultUrl, path)
+    baseUrlComponent, err := url.Parse(b.DefaultUrl)
+    if err != nil {
+        panic(err)
+    }
+
+    return baseUrlComponent.ResolveReference(pathUrlComponent).String()
 }
 
 func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, contentType string) error {
