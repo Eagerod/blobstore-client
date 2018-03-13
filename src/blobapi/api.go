@@ -8,6 +8,7 @@ import (
     "net/http"
     "net/url"
     "os"
+    "strings"
     "time"
 )
 
@@ -31,6 +32,12 @@ type IBlobStoreApiClient interface {
 
 
 func NewBlobStoreApiClient(url, readAcl, writeAcl string) *BlobStoreApiClient {
+    // Make sure that the base url looks like a path, so that url resolution
+    // always uses the full base url as the prefix.
+    if !strings.HasSuffix(url, "/") {
+        url = url + "/"
+    }
+
     return &BlobStoreApiClient{
         url,
         readAcl,
@@ -41,6 +48,13 @@ func NewBlobStoreApiClient(url, readAcl, writeAcl string) *BlobStoreApiClient {
 
 
 func (b *BlobStoreApiClient) route(path string) string {
+    // Always remove a / prefix on `path`, since it will resolve itself down to
+    // the host, rather than whatever additional pathing we want to add to the
+    // BlobStore default URL.
+    for strings.HasPrefix(path, "/") {
+        path = path[1:]
+    }
+
     pathUrlComponent, err := url.Parse(path)
     if err != nil {
         panic(err)
