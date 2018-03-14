@@ -1,6 +1,7 @@
 package blobapi;
 
 import (
+    "net/http"
     "time"
     "testing"
 )
@@ -15,7 +16,9 @@ func TestCreation(t *testing.T) {
     assert.Equal(t, "a/", api.DefaultUrl)
     assert.Equal(t, "b", api.DefaultReadAcl)
     assert.Equal(t, "c", api.DefaultWriteAcl)
-    assert.Equal(t,  time.Second * 30, api.http.Timeout)
+
+    httpClient := api.http.(*http.Client)
+    assert.Equal(t,  time.Second * 30, httpClient.Timeout)
 }
 
 func TestRoute(t *testing.T) {

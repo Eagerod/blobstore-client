@@ -4,6 +4,7 @@ import (
     "bufio"
     "errors"
     "fmt"
+    "io"
     "io/ioutil"
     "net/http"
     "net/url"
@@ -12,12 +13,20 @@ import (
     "time"
 )
 
+type IHttpClient interface {
+    Do(*http.Request) (*http.Response, error)
+    Get(string) (*http.Response, error)
+    Head(string) (*http.Response, error)
+    Post(string, string, io.Reader) (*http.Response, error)
+    PostForm(string, url.Values) (*http.Response, error)
+}
+
 type BlobStoreApiClient struct {
     DefaultUrl string
     DefaultReadAcl string
     DefaultWriteAcl string
 
-    http http.Client
+    http IHttpClient
 }
 
 
@@ -42,7 +51,7 @@ func NewBlobStoreApiClient(url, readAcl, writeAcl string) *BlobStoreApiClient {
         url,
         readAcl,
         writeAcl,
-        http.Client{Timeout: time.Second * 30},
+        &http.Client{Timeout: time.Second * 30},
     }
 }
 
