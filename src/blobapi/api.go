@@ -78,7 +78,16 @@ func (b *BlobStoreApiClient) route(path string) string {
 }
 
 func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, contentType string) error {
-    response, err := b.http.Post(b.route(path), contentType, stream)
+    request, err := http.NewRequest("POST", b.route(path), stream)
+    if err != nil {
+        return err
+    }
+
+    request.Header.Add("Content-Type", contentType)
+    request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
+    request.Header.Add("X-BlobStore-Write-Acl", b.DefaultWriteAcl)
+
+    response, err := b.http.Do(request)
     if err != nil {
         return err
     }
