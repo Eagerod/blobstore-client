@@ -42,7 +42,15 @@ install: dependencies $(BIN_NAME)
 
 .PHONY: test
 test:
-	$(PREFIX) go test -v 'blobapi'
+	$(PREFIX) go test -v --coverprofile=coverage.out 'blobapi'
+
+.PHONY: coverage
+cover: test
+	$(PREFIX) go tool cover -func=coverage.out
+
+.PHONY: pretty-coverage
+pretty-coverage: test
+	$(PREFIX) go tool cover -html=coverage.out
 
 build/%.zip:
 	mkdir -p build
