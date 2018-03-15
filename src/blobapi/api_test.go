@@ -42,4 +42,28 @@ func TestRoute(t *testing.T) {
 
         assert.Equal(t, ti.FinalUrl, api.route(ti.PathComponent))
     }
+
+    panics := []struct {
+        BaseUrl string
+        PathComponent string
+        PanicMessage string
+    }{
+        {":broken", "", "parse :broken/: missing protocol scheme"},
+        {"https://example.com", ":broken", "parse :broken: missing protocol scheme"},
+    }
+
+    for _, ti := range panics {
+        api := NewBlobStoreApiClient(ti.BaseUrl, "", "")
+        func () {
+            defer func() {
+                r := recover()
+                if r == nil {
+                    t.Errorf("Failed to produce panic: %s", ti.PanicMessage)
+                } else {
+                    assert.Equal(t, ti.PanicMessage, r.(error).Error())
+                }
+            }()
+            api.route(ti.PathComponent)
+        }()
+    }
 }
