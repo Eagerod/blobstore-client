@@ -115,7 +115,14 @@ func (b *BlobStoreApiClient) UploadFile(path string, source string, contentType 
 }
 
 func (b *BlobStoreApiClient) GetFileContents(path string) (string, error) {
-    response, err := b.http.Get(b.route(path))
+    request, err := http.NewRequest("GET", b.route(path), nil)
+    if err != nil {
+        return "", err
+    }
+
+    request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
+
+    response, err := b.http.Do(request)
     if err != nil {
         return "", err
     }

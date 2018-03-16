@@ -131,3 +131,49 @@ func TestUploadRequests(t *testing.T) {
     err := api.UploadFile("remote_filename", "../../Makefile", "text/plain")
     assert.Nil(t, err)
 }
+
+func TestDownloadRequests(t *testing.T) {
+    api := NewBlobStoreApiClient("https://example.org/deeper", "read secret", "write secret")
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, "GET", request.Method)
+        assert.Equal(t, "https://example.org/deeper/remote_filename", request.URL.String())
+        assert.Equal(t, "read secret", request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+
+        file, err := os.Open("../../Makefile")
+        assert.Nil(t, err)
+
+        bodyReader := bufio.NewReader(file)
+
+        response := http.Response{
+            StatusCode: 200,
+            Body: ioutil.NopCloser(bodyReader),
+        }
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+    tempFile, err := ioutil.TempFile("", "")
+    assert.Nil(t, err)
+    tempFile.Close()
+
+    err = api.DownloadFile("remote_filename", tempFile.Name())
+    assert.Nil(t, err)
+
+    tempFile, err = os.Open(tempFile.Name())
+    assert.Nil(t, err)
+
+    body, err := ioutil.ReadAll(bufio.NewReader(tempFile))
+    assert.Nil(t, err)
+
+    file, err := os.Open("../../Makefile")
+    assert.Nil(t, err)
+
+    expectedBody, err := ioutil.ReadAll(bufio.NewReader(file))
+    assert.Nil(t, err)
+
+    assert.Equal(t, expectedBody, body)
+}
