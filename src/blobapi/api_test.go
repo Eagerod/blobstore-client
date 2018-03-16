@@ -1,7 +1,12 @@
 package blobapi;
 
 import (
+    "bufio"
+    "io"
+    "io/ioutil"
     "net/http"
+    "net/url"
+    "os"
     "time"
     "testing"
 )
@@ -9,6 +14,31 @@ import (
 import (
     "github.com/stretchr/testify/assert"
 )
+
+type HttpMockedMethod func(params ...interface{})(*http.Response, error)
+
+type TestDrivenHttpClient struct {
+    t *testing.T
+    mockedCalls []HttpMockedMethod
+}
+
+func (t *TestDrivenHttpClient) Do(a *http.Request) (*http.Response, error) { return t.r(a) }
+func (t *TestDrivenHttpClient) Get(a string) (*http.Response, error) { return t.r(a) }
+func (t *TestDrivenHttpClient) Head(a string) (*http.Response, error) { return t.r(a) }
+func (t *TestDrivenHttpClient) Post(a string, b string, c io.Reader) (*http.Response, error) { return t.r(a, b, c) }
+func (t *TestDrivenHttpClient) PostForm(a string, b url.Values) (*http.Response, error) { return t.r(a, b) }
+
+func (t *TestDrivenHttpClient) r(args ...interface{}) (*http.Response, error) {
+    if len(t.mockedCalls) == 0 {
+        panic("Not enough mocked calls to http.client to facilitate request.")
+    }
+
+    defer func() {
+        t.mockedCalls = t.mockedCalls[1:]
+    }()
+
+    return t.mockedCalls[0](args...)
+}
 
 func TestCreation(t *testing.T) {
     var api *BlobStoreApiClient = NewBlobStoreApiClient("a", "b", "c")
@@ -49,7 +79,7 @@ func TestRoute(t *testing.T) {
         PanicMessage string
     }{
         {":broken", "", "parse :broken/: missing protocol scheme"},
-        {"https://example.com", ":broken", "parse :broken: missing protocol scheme"},
+        {"https://example.org", ":broken", "parse :broken: missing protocol scheme"},
     }
 
     for _, ti := range panics {
@@ -66,4 +96,38 @@ func TestRoute(t *testing.T) {
             api.route(ti.PathComponent)
         }()
     }
+}
+
+func TestUploadRequests(t *testing.T) {
+    api := NewBlobStoreApiClient("https://example.org/deeper", "read secret", "write secret")
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, "POST", request.Method)
+        assert.Equal(t, "https://example.org/deeper/remote_filename", request.URL.String())
+        assert.Equal(t, "text/plain", request.Header.Get("Content-Type"))
+        assert.Equal(t, "read secret", request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, "write secret", request.Header.Get("X-BlobStore-Write-Acl"))
+
+        body, err := ioutil.ReadAll(request.Body)
+        assert.Nil(t, err)
+
+        file, err := os.Open("../../Makefile")
+        assert.Nil(t, err)
+
+        expectedBody, err := ioutil.ReadAll(bufio.NewReader(file))
+        assert.Nil(t, err)
+
+        assert.Equal(t, expectedBody, body)
+
+        response := http.Response{
+            StatusCode: 200,
+        }
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+    err := api.UploadFile("remote_filename", "../../Makefile", "text/plain")
+    assert.Nil(t, err)
 }
