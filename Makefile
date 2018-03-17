@@ -77,11 +77,12 @@ build/installer.sh:
 	mkdir -p build
 	sed 's/^\(BLOB_LATEST_VERSION=\).*/\1"'$(BLOB_LATEST_VERSION)'"/' blober.sh > build/installer.sh
 
-upload/%.zip: $(BIN_NAME) build/%.zip
-	$(BIN_NAME) upload -f "$(UPLOAD_PATH)/$*.zip" -t "application/zip" -s "build/$*.zip"
-
 .PHONY: release
-release: upload/$(BLOB_LATEST_VERSION).zip build/installer.sh
+release: $(BIN_NAME) build/$(BLOB_LATEST_VERSION).zip build/installer.sh
+	if [ -z $$BLOBSTORE_WRITE_ACL ]; then \
+		$(error "Write ACL not present in environment; aborting release."); \
+	fi;
+	$(BIN_NAME) upload -f "$(UPLOAD_PATH)/$(BLOB_LATEST_VERSION).zip" -t "application/zip" -s "build/$(BLOB_LATEST_VERSION).zip"
 	$(BIN_NAME) upload -f "$(UPLOAD_PATH)/installer.sh" -t "text/x-shellscript" -s build/installer.sh
 
 .PHONY: clean
