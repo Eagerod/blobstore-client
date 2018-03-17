@@ -7,6 +7,7 @@ import (
     "net/http"
     "net/url"
     "os"
+    "strings"
     "time"
     "testing"
 )
@@ -98,7 +99,7 @@ func TestRoute(t *testing.T) {
     }
 }
 
-func TestUploadRequests(t *testing.T) {
+func TestUploadRequest(t *testing.T) {
     api := NewBlobStoreApiClient("https://example.org/deeper", "read secret", "write secret")
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
@@ -132,7 +133,25 @@ func TestUploadRequests(t *testing.T) {
     assert.Nil(t, err)
 }
 
-func TestDownloadRequests(t *testing.T) {
+func TestUploadRequestFails(t *testing.T) {
+     api := NewBlobStoreApiClient("https://example.org/deeper", "read secret", "write secret")
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        bodyReader := strings.NewReader("{\"code\":\"NotFound\",\"message\":\"File not found\"}")
+
+        response := http.Response{
+            StatusCode: 404,
+            Body: ioutil.NopCloser(bodyReader),
+        }
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+    err := api.UploadFile("remote_filename", "../../Makefile", "text/plain")
+    assert.Equal(t, "Blobstore Upload Failed (404): {\"code\":\"NotFound\",\"message\":\"File not found\"}", err.Error())
+}
+
+func TestDownloadRequest(t *testing.T) {
     api := NewBlobStoreApiClient("https://example.org/deeper", "read secret", "write secret")
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
@@ -176,4 +195,26 @@ func TestDownloadRequests(t *testing.T) {
     assert.Nil(t, err)
 
     assert.Equal(t, expectedBody, body)
+}
+
+func TestDownloadRequestFails(t *testing.T) {
+    api := NewBlobStoreApiClient("https://example.org/deeper", "read secret", "write secret")
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        bodyReader := strings.NewReader("{\"code\":\"NotFound\",\"message\":\"File not found\"}")
+
+        response := http.Response{
+            StatusCode: 404,
+            Body: ioutil.NopCloser(bodyReader),
+        }
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+    tempFile, err := ioutil.TempFile("", "")
+    assert.Nil(t, err)
+    tempFile.Close()
+
+    err = api.DownloadFile("remote_filename", tempFile.Name())
+    assert.Equal(t, "Blobstore Download Failed (404): {\"code\":\"NotFound\",\"message\":\"File not found\"}", err.Error())
 }
