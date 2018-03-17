@@ -61,14 +61,18 @@ install: build-dependencies dependencies $(BIN_NAME)
 
 .PHONY: test
 test: dev-dependencies dependencies
+	$(PREFIX) go test -v 'blobapi'
+
+.PHONY: test-cover
+test-cover: 
 	$(PREFIX) go test -v --coverprofile=coverage.out 'blobapi'
 
 .PHONY: coverage
-cover: test
+cover: test-cover
 	$(PREFIX) go tool cover -func=coverage.out
 
 .PHONY: pretty-coverage
-pretty-coverage: test
+pretty-coverage: test-cover
 	$(PREFIX) go tool cover -html=coverage.out
 
 build/%.zip:
@@ -90,6 +94,7 @@ release: $(BIN_NAME) build/$(BLOB_LATEST_VERSION).zip build/installer.sh
 
 .PHONY: clean
 clean:
+	rm coverage.out || true
 	rm -rf build || true
 	rm -rf $(DEPS_DIR) || true
 	rm $(BIN_NAME) || true

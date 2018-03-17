@@ -34,6 +34,7 @@ type IBlobStoreApiClient interface {
     UploadStream(path string, stream *bufio.Reader, contentType string) error
     UploadFile(path string, source string, contentType string) error
 
+    GetFileReadStream(path string) (*io.Reader, error)
     GetFileContents(path string) (string, error)
     DownloadFile(path string, dest string) error
     CatFile(path string) error
@@ -114,29 +115,45 @@ func (b *BlobStoreApiClient) UploadFile(path string, source string, contentType 
     return b.UploadStream(path, fileReader, contentType)
 }
 
-func (b *BlobStoreApiClient) GetFileContents(path string) (string, error) {
+func (b *BlobStoreApiClient) GetFileReadStream(path string) (*io.Reader, error) {
     request, err := http.NewRequest("GET", b.route(path), nil)
     if err != nil {
-        return "", err
+        return nil, err
     }
 
     request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
 
     response, err := b.http.Do(request)
     if err != nil {
-        return "", err
+        return nil, err
     }
 
-    body, err := ioutil.ReadAll(response.Body)
+    if response.StatusCode != 200 {
+        bodyBytes, err := ioutil.ReadAll(response.Body)
+        if err != nil {
+            return nil, err
+        }
+
+        return nil, errors.New(fmt.Sprintf("Blobstore Download Failed (%d): %s", response.StatusCode, string(bodyBytes)))
+    }
+
+    body := response.Body.(io.Reader)
+
+    return &body, nil
+}
+
+func (b *BlobStoreApiClient) GetFileContents(path string) (string, error) {
+    body, err := b.GetFileReadStream(path)
     if err != nil {
         return "", err
     }
 
-    if response.StatusCode != 200 {
-        return "", errors.New(fmt.Sprintf("Blobstore Download Failed (%d): %s", response.StatusCode, string(body)))
+    bodyBytes, err := ioutil.ReadAll(*body)
+    if err != nil {
+        return "", err
     }
 
-    return string(body), nil
+    return string(bodyBytes), nil
 }
 
 func (b *BlobStoreApiClient) DownloadFile(path, dest string) error {
