@@ -38,16 +38,16 @@ dev_dependencies: $(DEV_DEPS)
 .PHONY: build-dependencies
 build-dependencies:
 	if ! type git > /dev/null 2> /dev/null; then \
-	    if [[ "$$(uname)" -eq "Darwin" ]]; then \
+	    if [[ "$$(uname)" == "Darwin" ]]; then \
 	        brew install git; \
-	    elif [[ "$$(uname)" -eq "Linux" ]]; then \
+	    elif [[ "$$(uname)" == "Linux" ]]; then \
 	        apt install git; \
 	    fi; \
 	fi; \
 	if ! type go > /dev/null 2> /dev/null; then \
-	    if [[ "$$(uname)" -eq "Darwin" ]]; then \
+	    if [[ "$$(uname)" == "Darwin" ]]; then \
 	        brew install go; \
-	    elif [[ "$$(uname)" -eq "Linux" ]]; then \
+	    elif [[ "$$(uname)" == "Linux" ]]; then \
 	        apt install golang-go; \
 	    fi; \
 	fi;
