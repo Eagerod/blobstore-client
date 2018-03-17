@@ -1,3 +1,5 @@
+SHELL := $(shell which bash)
+
 ENV_PREFIX := GOPATH=`pwd`:`pwd`/deps
 PREFIX := $(ENV_PREFIX)
 
