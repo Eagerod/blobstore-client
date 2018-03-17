@@ -32,8 +32,8 @@ $(DEPS_DIR)/%:
 .PHONY: dependencies
 dependencies: $(DEPS)
 
-.PHONY: dev_dependencies
-dev_dependencies: $(DEV_DEPS)
+.PHONY: dev-dependencies
+dev-dependencies: $(DEV_DEPS)
 
 .PHONY: build-dependencies
 build-dependencies:
@@ -60,7 +60,7 @@ install: build-dependencies dependencies $(BIN_NAME)
 	cp $(BIN_NAME) /usr/local/bin/$(BIN_FILE)
 
 .PHONY: test
-test:
+test: dev-dependencies dependencies
 	$(PREFIX) go test -v --coverprofile=coverage.out 'blobapi'
 
 .PHONY: coverage
