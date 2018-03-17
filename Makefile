@@ -15,7 +15,7 @@ DEV_DEPS := $(foreach f,$(shell cat dev_deps.txt),$(DEPS_DIR)/$(f))
 
 UPLOAD_PATH := clientlib
 
-BLOB_LATEST_VERSION := $(shell git tag -ln | tail -1 | awk '{print $$1}')
+BLOB_LATEST_VERSION := $(shell git tag | sort -n | tail -1 | awk '{print $$1}')
 
 $(BIN_NAME): dependencies
 	mkdir -p $(BIN_ROOT)
