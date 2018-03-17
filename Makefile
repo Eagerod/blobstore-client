@@ -79,8 +79,9 @@ build/installer.sh:
 
 .PHONY: release
 release: $(BIN_NAME) build/$(BLOB_LATEST_VERSION).zip build/installer.sh
-	if [ -z $$BLOBSTORE_WRITE_ACL ]; then \
-		$(error "Write ACL not present in environment; aborting release."); \
+	if [ -z "$$BLOBSTORE_WRITE_ACL" ]; then \
+		echo >&2 "Write ACL not present in environment; aborting release."; \
+		exit -1; \
 	fi;
 	$(BIN_NAME) upload -f "$(UPLOAD_PATH)/$(BLOB_LATEST_VERSION).zip" -t "application/zip" -s "build/$(BLOB_LATEST_VERSION).zip"
 	$(BIN_NAME) upload -f "$(UPLOAD_PATH)/installer.sh" -t "text/x-shellscript" -s build/installer.sh
