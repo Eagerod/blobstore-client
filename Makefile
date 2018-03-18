@@ -17,6 +17,21 @@ UPLOAD_PATH := clientlib
 
 BLOB_LATEST_VERSION := $(shell git tag | sort -n | tail -1 | awk '{print $$1}')
 
+BUILD_DEPS_PREFIX := build_deps
+
+UNAME := $(shell uname -s)
+ifeq ($(UNAME),Linux)
+	DEP_CHECK := dpkg -s
+	SYS_INSTALL := sudo apt install -y
+	BUILD_DEPS_P := git golang-go
+else ifeq ($(UNAME),Darwin)
+	DEP_CHECK := brew ls --versions
+	SYS_INSTALL := brew install
+	BUILD_DEPS_P := git go
+endif
+
+BUILD_DEPS := $(foreach f,$(BUILD_DEPS_P),$(BUILD_DEPS_PREFIX)/$(f))
+
 $(BIN_NAME): dependencies
 	mkdir -p $(BIN_ROOT)
 	$(PREFIX) go build -o $(BIN_NAME) $(SOURCES)
@@ -35,22 +50,14 @@ dependencies: $(DEPS)
 .PHONY: dev-dependencies
 dev-dependencies: $(DEV_DEPS)
 
+.PHONY: $(BUILD_DEPS_PREFIX)/%
+$(BUILD_DEPS_PREFIX)/%:
+	if ! $(DEP_CHECK) $*; then \
+		$(SYS_INSTALL) $*; \
+	fi
+
 .PHONY: build-dependencies
-build-dependencies:
-	if ! type git > /dev/null 2> /dev/null; then \
-	    if [[ "$$(uname)" == "Darwin" ]]; then \
-	        brew install git; \
-	    elif [[ "$$(uname)" == "Linux" ]]; then \
-	        apt install git; \
-	    fi; \
-	fi; \
-	if ! type go > /dev/null 2> /dev/null; then \
-	    if [[ "$$(uname)" == "Darwin" ]]; then \
-	        brew install go; \
-	    elif [[ "$$(uname)" == "Linux" ]]; then \
-	        apt install golang-go; \
-	    fi; \
-	fi;
+build-dependencies: $(BUILD_DEPS)
 
 .PHONY: all
 all: $(BIN_NAME)
