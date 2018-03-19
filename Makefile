@@ -39,10 +39,16 @@ $(BIN_NAME): dependencies
 .PHONY: $(DEPS_DIR)/%
 $(DEPS_DIR)/%:
 	mkdir -p $(DEPS_DIR)
-	if [ ! -d "$(DEPS_DIR)/$$(echo $* | awk -F '@' '{print $$1}')" ]; then \
-		git clone "https://$$(echo $* | awk -F '@' '{print $$1}')" "$(DEPS_DIR)/$$(echo $* | awk -F '@' '{print $$1}')"; \
+	$(eval DEP_SRC := $(shell echo $* | awk -F '@' '{print $$1}'))
+	$(eval DEP_TAG := $(shell echo $* | awk -F '@' '{print $$2}'))
+
+	if [ ! -d "$(DEPS_DIR)/$(DEP_SRC)" ]; then \
+		git clone "https://$(DEP_SRC)" "$(DEPS_DIR)/$(DEP_SRC)"; \
 	fi
-	cd $(DEPS_DIR)/$$(echo $* | awk -F '@' '{print $$1}') && git remote update && git checkout $$(echo $* | awk -F '@' '{print $$2}')
+	if [ "$$(git -C $(DEPS_DIR)/$(DEP_SRC) log --format=%H -1)" != "$(DEP_TAG)" ]; then \
+		git -C $(DEPS_DIR)/$(DEP_SRC) remote update; \
+		git -C $(DEPS_DIR)/$(DEP_SRC) checkout $(DEP_TAG); \
+	fi
 
 .PHONY: dependencies
 dependencies: $(DEPS)
