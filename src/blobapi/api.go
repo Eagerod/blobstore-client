@@ -38,6 +38,10 @@ type IBlobStoreApiClient interface {
     GetFileContents(path string) (string, error)
     DownloadFile(path string, dest string) error
     CatFile(path string) error
+
+    AppendStream(path string, stream *bufio.Reader) error
+    AppendString(path string, value string) error
+    AppendFile(path string, source string) error
 }
 
 
@@ -115,7 +119,12 @@ func (b *BlobStoreApiClient) UploadFile(path string, source string, contentType 
     return b.UploadStream(path, fileReader, contentType)
 }
 
-func (b *BlobStoreApiClient) GetFileReadStream(path string) (*io.Reader, error) {
+type getFileReadStreamResponse struct {
+    reader *io.Reader
+    contentType string
+}
+
+func (b *BlobStoreApiClient) getFileReadStream(path string) (*getFileReadStreamResponse, error) {
     request, err := http.NewRequest("GET", b.route(path), nil)
     if err != nil {
         return nil, err
@@ -138,8 +147,17 @@ func (b *BlobStoreApiClient) GetFileReadStream(path string) (*io.Reader, error) 
     }
 
     body := response.Body.(io.Reader)
+    r := getFileReadStreamResponse{&body, response.Header.Get("Content-Type")}
 
-    return &body, nil
+    return &r, nil
+}
+
+func (b *BlobStoreApiClient) GetFileReadStream(path string) (*io.Reader, error) {
+    response, err := b.getFileReadStream(path)
+    if err != nil {
+        return nil, err
+    }
+    return response.reader, err
 }
 
 func (b *BlobStoreApiClient) GetFileContents(path string) (string, error) {
@@ -174,4 +192,29 @@ func (b *BlobStoreApiClient) CatFile(path string) error {
 
     fmt.Println(str)
     return nil
+}
+
+func (b *BlobStoreApiClient) AppendStream(path string, stream *bufio.Reader) error {
+    getFileReadStreamResponse, err := b.getFileReadStream(path)
+    if err != nil {
+        return err
+    }
+
+    multiStream := bufio.NewReader(io.MultiReader(*getFileReadStreamResponse.reader, stream))
+    return b.UploadStream(path, multiStream, getFileReadStreamResponse.contentType)
+}
+
+func (b *BlobStoreApiClient) AppendString(path string, value string) error {
+    stringReader := bufio.NewReader(strings.NewReader(value))
+    return b.AppendStream(path, stringReader)
+}
+
+func (b *BlobStoreApiClient) AppendFile(path string, source string) error {
+    file, err := os.Open(source)
+    if err != nil {
+        return err
+    }
+
+    fileReader := bufio.NewReader(file)
+    return b.AppendStream(path, fileReader)
 }

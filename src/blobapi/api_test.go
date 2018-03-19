@@ -218,3 +218,139 @@ func TestDownloadRequestFails(t *testing.T) {
     err = api.DownloadFile("remote_filename", tempFile.Name())
     assert.Equal(t, "Blobstore Download Failed (404): {\"code\":\"NotFound\",\"message\":\"File not found\"}", err.Error())
 }
+
+// Append functions are a bit more difficult to test, because they need to mock
+// both a download and an upload function and return the appropriate responses
+// for both calls.
+func TestAppendStringRequest(t *testing.T) {
+    api := NewBlobStoreApiClient("https://example.org/deeper", "read secret", "write secret")
+    stringToAppend := "This is some text that should appear after the rest."
+
+    getMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, "GET", request.Method)
+        assert.Equal(t, "https://example.org/deeper/remote_filename", request.URL.String())
+        assert.Equal(t, "read secret", request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+
+        file, err := os.Open("../../Makefile")
+        assert.Nil(t, err)
+
+        bodyReader := bufio.NewReader(file)
+
+        response := http.Response{
+            StatusCode: 200,
+            Body: ioutil.NopCloser(bodyReader),
+        }
+
+        response.Header = make(map[string][]string)
+        response.Header.Set("Content-Type", "text/plain")
+
+        return &response, nil
+    }
+
+    postMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, "POST", request.Method)
+        assert.Equal(t, "https://example.org/deeper/remote_filename", request.URL.String())
+        assert.Equal(t, "text/plain", request.Header.Get("Content-Type"))
+        assert.Equal(t, "read secret", request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, "write secret", request.Header.Get("X-BlobStore-Write-Acl"))
+
+        body, err := ioutil.ReadAll(request.Body)
+        assert.Nil(t, err)
+
+        file, err := os.Open("../../Makefile")
+        assert.Nil(t, err)
+
+        expectedBody, err := ioutil.ReadAll(bufio.NewReader(file))
+        assert.Nil(t, err)
+
+        appendBody, err := ioutil.ReadAll(strings.NewReader(stringToAppend))
+        assert.Nil(t, err)
+
+        expectedBody = append(expectedBody, appendBody...)
+        assert.Equal(t, expectedBody, body)
+
+        response := http.Response{
+            StatusCode: 200,
+        }
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{getMock, postMock}}
+    tempFile, err := ioutil.TempFile("", "")
+    assert.Nil(t, err)
+    tempFile.Close()
+
+    err = api.AppendString("remote_filename", stringToAppend)
+    assert.Nil(t, err)
+}
+
+// Append functions are a bit more difficult to test, because they need to mock
+// both a download and an upload function and return the appropriate responses
+// for both calls.
+func TestAppendFileRequest(t *testing.T) {
+    api := NewBlobStoreApiClient("https://example.org/deeper", "read secret", "write secret")
+
+    getMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, "GET", request.Method)
+        assert.Equal(t, "https://example.org/deeper/remote_filename", request.URL.String())
+        assert.Equal(t, "read secret", request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+
+        file, err := os.Open("../../Makefile")
+        assert.Nil(t, err)
+
+        bodyReader := bufio.NewReader(file)
+
+        response := http.Response{
+            StatusCode: 200,
+            Body: ioutil.NopCloser(bodyReader),
+        }
+
+        response.Header = make(map[string][]string)
+        response.Header.Set("Content-Type", "text/plain")
+
+        return &response, nil
+    }
+
+    postMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, "POST", request.Method)
+        assert.Equal(t, "https://example.org/deeper/remote_filename", request.URL.String())
+        assert.Equal(t, "text/plain", request.Header.Get("Content-Type"))
+        assert.Equal(t, "read secret", request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, "write secret", request.Header.Get("X-BlobStore-Write-Acl"))
+
+        body, err := ioutil.ReadAll(request.Body)
+        assert.Nil(t, err)
+
+        file, err := os.Open("../../Makefile")
+        assert.Nil(t, err)
+
+        expectedBody, err := ioutil.ReadAll(bufio.NewReader(file))
+        assert.Nil(t, err)
+
+        expectedBody = append(expectedBody, expectedBody...)
+        assert.Equal(t, expectedBody, body)
+
+        response := http.Response{
+            StatusCode: 200,
+        }
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{getMock, postMock}}
+    tempFile, err := ioutil.TempFile("", "")
+    assert.Nil(t, err)
+    tempFile.Close()
+
+    err = api.AppendFile("remote_filename", "../../Makefile")
+    assert.Nil(t, err)
+}
