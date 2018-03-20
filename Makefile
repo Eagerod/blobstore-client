@@ -76,6 +76,10 @@ install: build-dependencies dependencies $(BIN_NAME)
 test: dev-dependencies dependencies
 	$(PREFIX) go test -v 'blobapi'
 
+.PHONY: system-test
+system-test: install
+	$(PREFIX) go test -v src/main_test.go 
+
 .PHONY: test-cover
 test-cover: 
 	$(PREFIX) go test -v --coverprofile=coverage.out 'blobapi'
