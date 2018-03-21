@@ -22,6 +22,7 @@ import (
 // than needed.
 const testingAccessToken string = "ad4c3f2d4fb81f4118f837464b961eebda026d8c52a7cc967047cc3c2a3f6a43"
 const makefilePath string = "../Makefile"
+const remoteMakefilePath string = "clientlib/testing/Makefile"
 
 var blobCliHelpString *string
 var makefileBytes *[]byte
@@ -59,7 +60,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCommandLineInterfaceUpload(t *testing.T) {
-    cmd := exec.Command("blob", "upload", "--filename", "clientlib/testing/Makefile", "--type", "text/plain", "--source", makefilePath)
+    cmd := exec.Command("blob", "upload", "--filename", remoteMakefilePath, "--type", "text/plain", "--source", makefilePath)
 
     cmd.Env = append(os.Environ(),
         "BLOBSTORE_READ_ACL=" + testingAccessToken,
@@ -75,14 +76,14 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
     assert.Equal(t, "", string(output))
 
     api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
-    contents, err := api.GetFileContents("clientlib/testing/Makefile")
+    contents, err := api.GetFileContents(remoteMakefilePath)
     assert.Nil(t, err)
 
     assert.Equal(t, string(*makefileBytes), contents)
 }
 
 func TestCommandLineInterfaceUploadFails(t *testing.T) {
-    cmd := exec.Command("blob", "upload", "--filename", "clientlib/testing/Makefile", "--type", "text/plain", "--source", makefilePath)
+    cmd := exec.Command("blob", "upload", "--filename", remoteMakefilePath, "--type", "text/plain", "--source", makefilePath)
 
     output, err := cmd.CombinedOutput()
     if err == nil {
@@ -95,9 +96,9 @@ func TestCommandLineInterfaceUploadFails(t *testing.T) {
 
 func TestCommandLineInterfaceDownload(t *testing.T) {
     api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
-    api.UploadFile("clientlib/testing/Makefile", makefilePath, "text/plain")
+    api.UploadFile(remoteMakefilePath, makefilePath, "text/plain")
 
-    cmd := exec.Command("blob", "download", "--filename", "clientlib/testing/Makefile", "--dest", "../Makefile2")
+    cmd := exec.Command("blob", "download", "--filename", remoteMakefilePath, "--dest", "../Makefile2")
 
     cmd.Env = append(os.Environ(),
         "BLOBSTORE_READ_ACL=" + testingAccessToken,
@@ -122,7 +123,7 @@ func TestCommandLineInterfaceDownload(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownloadFails(t *testing.T) {
-    cmd := exec.Command("blob", "download", "--filename", "clientlib/testing/Makefile", "--dest", "../Makefile2")
+    cmd := exec.Command("blob", "download", "--filename", remoteMakefilePath, "--dest", "../Makefile2")
 
     output, err := cmd.CombinedOutput()
     if err == nil {
@@ -135,9 +136,9 @@ func TestCommandLineInterfaceDownloadFails(t *testing.T) {
 
 func TestCommandLineInterfaceAppend(t *testing.T) {
     api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
-    api.UploadFile("clientlib/testing/Makefile", makefilePath, "text/plain")
+    api.UploadFile(remoteMakefilePath, makefilePath, "text/plain")
 
-    cmd := exec.Command("blob", "append", "--filename", "clientlib/testing/Makefile", "--string", "something extra")
+    cmd := exec.Command("blob", "append", "--filename", remoteMakefilePath, "--string", "something extra")
 
     cmd.Env = append(os.Environ(),
         "BLOBSTORE_READ_ACL=" + testingAccessToken,
@@ -152,14 +153,14 @@ func TestCommandLineInterfaceAppend(t *testing.T) {
     assert.Nil(t, err)
     assert.Equal(t, "", string(output))
 
-    contents, err := api.GetFileContents("clientlib/testing/Makefile")
+    contents, err := api.GetFileContents(remoteMakefilePath)
     assert.Nil(t, err)
 
     assert.Equal(t, string(*makefileBytes) + "something extra", contents)
 }
 
 func TestCommandLineInterfaceAppendFails(t *testing.T) {
-    cmd := exec.Command("blob", "append", "--filename", "clientlib/testing/Makefile", "--string", "something extra")
+    cmd := exec.Command("blob", "append", "--filename", remoteMakefilePath, "--string", "something extra")
 
     output, err := cmd.CombinedOutput()
     if err == nil {
