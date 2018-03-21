@@ -23,7 +23,7 @@ import (
 const testingAccessToken string = "ad4c3f2d4fb81f4118f837464b961eebda026d8c52a7cc967047cc3c2a3f6a43"
 var blobCliHelpString *string
 
-func init() {
+func TestMain(m *testing.M) {
     if _, err := exec.LookPath("blob"); err != nil {
         panic("Failed to find executable to run system tests")
     }
@@ -36,6 +36,11 @@ func init() {
 
     stringVal := string(str)
     blobCliHelpString = &stringVal
+
+    retCode := m.Run()
+
+    os.Remove("../Makefile2")
+    os.Exit(retCode)
 }
 
 func TestCommandLineInterfaceUpload(t *testing.T) {
