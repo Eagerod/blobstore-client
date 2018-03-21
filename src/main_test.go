@@ -21,7 +21,10 @@ import (
 // the project's build directory if possible, but that may be more difficult 
 // than needed.
 const testingAccessToken string = "ad4c3f2d4fb81f4118f837464b961eebda026d8c52a7cc967047cc3c2a3f6a43"
+const makefilePath string = "../Makefile"
+
 var blobCliHelpString *string
+var makefileBytes *[]byte
 
 func TestMain(m *testing.M) {
     if _, err := exec.LookPath("blob"); err != nil {
@@ -37,6 +40,18 @@ func TestMain(m *testing.M) {
     stringVal := string(str)
     blobCliHelpString = &stringVal
 
+    file, err := os.Open(makefilePath)
+    if err != nil {
+        panic("Failed to find Makefile for upload tests.")
+    }
+
+    expectedBody, err := ioutil.ReadAll(bufio.NewReader(file))
+    if err != nil {
+        panic("Failed to read bytes out from Makefile")
+    }
+
+    makefileBytes = &expectedBody
+
     retCode := m.Run()
 
     os.Remove("../Makefile2")
@@ -44,7 +59,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCommandLineInterfaceUpload(t *testing.T) {
-    cmd := exec.Command("blob", "upload", "--filename", "clientlib/testing/Makefile", "--type", "text/plain", "--source", "../Makefile")
+    cmd := exec.Command("blob", "upload", "--filename", "clientlib/testing/Makefile", "--type", "text/plain", "--source", makefilePath)
 
     cmd.Env = append(os.Environ(),
         "BLOBSTORE_READ_ACL=" + testingAccessToken,
@@ -63,17 +78,11 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
     contents, err := api.GetFileContents("clientlib/testing/Makefile")
     assert.Nil(t, err)
 
-    file, err := os.Open("../Makefile")
-    assert.Nil(t, err)
-
-    expectedBody, err := ioutil.ReadAll(bufio.NewReader(file))
-    assert.Nil(t, err)
-
-    assert.Equal(t, string(expectedBody), contents)
+    assert.Equal(t, string(*makefileBytes), contents)
 }
 
 func TestCommandLineInterfaceUploadFails(t *testing.T) {
-    cmd := exec.Command("blob", "upload", "--filename", "clientlib/testing/Makefile", "--type", "text/plain", "--source", "../Makefile")
+    cmd := exec.Command("blob", "upload", "--filename", "clientlib/testing/Makefile", "--type", "text/plain", "--source", makefilePath)
 
     output, err := cmd.CombinedOutput()
     if err == nil {
@@ -86,7 +95,7 @@ func TestCommandLineInterfaceUploadFails(t *testing.T) {
 
 func TestCommandLineInterfaceDownload(t *testing.T) {
     api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
-    api.UploadFile("clientlib/testing/Makefile", "../Makefile", "text/plain")
+    api.UploadFile("clientlib/testing/Makefile", makefilePath, "text/plain")
 
     cmd := exec.Command("blob", "download", "--filename", "clientlib/testing/Makefile", "--dest", "../Makefile2")
 
@@ -109,13 +118,7 @@ func TestCommandLineInterfaceDownload(t *testing.T) {
     receivedBody, err := ioutil.ReadAll(bufio.NewReader(receivedFile))
     assert.Nil(t, err)
 
-    expectedFile, err := os.Open("../Makefile")
-    assert.Nil(t, err)
-
-    expectedBody, err := ioutil.ReadAll(bufio.NewReader(expectedFile))
-    assert.Nil(t, err)
-
-    assert.Equal(t, expectedBody, receivedBody)
+    assert.Equal(t, *makefileBytes, receivedBody)
 }
 
 func TestCommandLineInterfaceDownloadFails(t *testing.T) {
