@@ -16,6 +16,7 @@ import (
 
 const BlobStoreReadAclEnvironmentVariable = "BLOBSTORE_READ_ACL"
 const BlobStoreWriteAclEnvironmentVariable = "BLOBSTORE_WRITE_ACL"
+const BlobStoreDefaultUrlBase = "https://aleem.haji.ca/blob"
 
 func main() {
     parser := argparse.NewParser("blob", "Upload and download from blobstore.")
@@ -45,7 +46,7 @@ func main() {
         writeAcl = ""
     }
 
-    var b blobapi.IBlobStoreApiClient = blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", readAcl, writeAcl)
+    var b blobapi.IBlobStoreApiClient = blobapi.NewBlobStoreApiClient(BlobStoreDefaultUrlBase, readAcl, writeAcl)
 
     switch {
     case uploadCommand.Happened():
