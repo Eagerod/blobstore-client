@@ -30,6 +30,10 @@ func main() {
     downloadFilename := downloadCommand.String("f", "filename", &argparse.Options{Help: "Name of file downloaded from blobstore", Required: true})    
     destination := downloadCommand.String("d", "dest", &argparse.Options{Help: "Local file to write", Required: true})    
 
+    appendCommand := parser.NewCommand("append", "Append to an existing file on blobstore")
+    appendFilename := appendCommand.String("f", "filename", &argparse.Options{Help: "Name of file on blobstore", Required: true})    
+    appendString := appendCommand.String("s", "string", &argparse.Options{Help: "String to append to existing file", Required: true})    
+
     err := parser.Parse(os.Args)
     if err != nil {
         fmt.Println(parser.Usage(err))
@@ -53,6 +57,8 @@ func main() {
         err = b.UploadFile(*uploadFilename, *source, *cType)
     case downloadCommand.Happened():
         err = b.DownloadFile(*downloadFilename, *destination)
+    case appendCommand.Happened():
+        err = b.AppendString(*appendFilename, *appendString)
     default:
         err = errors.New("Failed to identify command to run")
     }

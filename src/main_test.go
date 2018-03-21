@@ -132,3 +132,40 @@ func TestCommandLineInterfaceDownloadFails(t *testing.T) {
     expectedOutput := `Blobstore Download Failed (404): {"code":"NotFound","message":"File not found"}` + "\n" + *blobCliHelpString + "\n"
     assert.Equal(t, expectedOutput, string(output))
 }
+
+func TestCommandLineInterfaceAppend(t *testing.T) {
+    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
+    api.UploadFile("clientlib/testing/Makefile", makefilePath, "text/plain")
+
+    cmd := exec.Command("blob", "append", "--filename", "clientlib/testing/Makefile", "--string", "something extra")
+
+    cmd.Env = append(os.Environ(),
+        "BLOBSTORE_READ_ACL=" + testingAccessToken,
+        "BLOBSTORE_WRITE_ACL=" + testingAccessToken,
+    )
+
+    output, err := cmd.CombinedOutput()
+    if err != nil {
+        assert.Failf(t, err.Error(), string(output))
+    }
+
+    assert.Nil(t, err)
+    assert.Equal(t, "", string(output))
+
+    contents, err := api.GetFileContents("clientlib/testing/Makefile")
+    assert.Nil(t, err)
+
+    assert.Equal(t, string(*makefileBytes) + "something extra", contents)
+}
+
+func TestCommandLineInterfaceAppendFails(t *testing.T) {
+    cmd := exec.Command("blob", "append", "--filename", "clientlib/testing/Makefile", "--string", "something extra")
+
+    output, err := cmd.CombinedOutput()
+    if err == nil {
+        assert.Fail(t, "Expected a failure from append command")
+    }
+
+    expectedOutput := `Blobstore Download Failed (404): {"code":"NotFound","message":"File not found"}` + "\n" + *blobCliHelpString + "\n"
+    assert.Equal(t, expectedOutput, string(output))
+}
