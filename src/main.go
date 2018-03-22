@@ -28,7 +28,7 @@ func main() {
 
     downloadCommand := parser.NewCommand("download", "Download file from blobstore")
     downloadFilename := downloadCommand.String("f", "filename", &argparse.Options{Help: "Name of file downloaded from blobstore", Required: true})    
-    destination := downloadCommand.String("d", "dest", &argparse.Options{Help: "Local file to write", Required: true})    
+    destination := downloadCommand.String("d", "dest", &argparse.Options{Help: "Local file to write", Required: false})    
 
     appendCommand := parser.NewCommand("append", "Append to an existing file on blobstore")
     appendFilename := appendCommand.String("f", "filename", &argparse.Options{Help: "Name of file on blobstore", Required: true})    
@@ -56,7 +56,11 @@ func main() {
     case uploadCommand.Happened():
         err = b.UploadFile(*uploadFilename, *source, *cType)
     case downloadCommand.Happened():
-        err = b.DownloadFile(*downloadFilename, *destination)
+        if *destination == "" {
+            err = b.CatFile(*downloadFilename)
+        } else {
+            err = b.DownloadFile(*downloadFilename, *destination)
+        }
     case appendCommand.Happened():
         err = b.AppendString(*appendFilename, *appendString)
     default:
