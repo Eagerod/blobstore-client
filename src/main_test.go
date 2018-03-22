@@ -122,6 +122,26 @@ func TestCommandLineInterfaceDownload(t *testing.T) {
     assert.Equal(t, *makefileBytes, receivedBody)
 }
 
+func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
+    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
+    api.UploadFile(remoteMakefilePath, makefilePath, "text/plain")
+
+    cmd := exec.Command("blob", "download", "--filename", remoteMakefilePath)
+
+    cmd.Env = append(os.Environ(),
+        "BLOBSTORE_READ_ACL=" + testingAccessToken,
+        "BLOBSTORE_WRITE_ACL=" + testingAccessToken,
+    )
+
+    output, err := cmd.CombinedOutput()
+    if err != nil {
+        assert.Failf(t, err.Error(), string(output))
+    }
+
+    assert.Nil(t, err)
+    assert.Equal(t, append(*makefileBytes, []byte("\n")...), output)
+}
+
 func TestCommandLineInterfaceDownloadFails(t *testing.T) {
     cmd := exec.Command("blob", "download", "--filename", remoteMakefilePath, "--dest", "../Makefile2")
 

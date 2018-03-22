@@ -77,7 +77,7 @@ test: dev-dependencies dependencies
 	$(PREFIX) go test -v 'blobapi'
 
 .PHONY: system-test
-system-test: install
+system-test: install dev-dependencies
 	$(PREFIX) go test -v src/main_test.go 
 
 .PHONY: test-cover
