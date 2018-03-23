@@ -10,8 +10,8 @@ BIN_FILE := blob
 BIN_NAME := $(BIN_ROOT)/$(BIN_FILE)
 
 DEPS_DIR := deps/src
-DEPS := $(foreach f,$(shell cat deps.txt),$(DEPS_DIR)/$(f))
-DEV_DEPS := $(foreach f,$(shell cat dev_deps.txt),$(DEPS_DIR)/$(f))
+DEPS := $(foreach f,$(shell cat deps.txt | grep -v "^\s*\#"),$(DEPS_DIR)/$(f))
+DEV_DEPS := $(foreach f,$(shell cat dev_deps.txt | grep -v "^\s*\#"),$(DEPS_DIR)/$(f))
 
 UPLOAD_PATH := clientlib
 
