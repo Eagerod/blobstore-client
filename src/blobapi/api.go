@@ -88,6 +88,18 @@ func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, con
         return err
     }
 
+    if contentType == "" {
+        streamCopy := bufio.NewReader(stream)
+
+        var buffer []byte = make([]byte, 0, 256)
+        _, err = streamCopy.Read(buffer)
+        if err != nil && err != io.EOF {
+            return err
+        }
+
+        contentType = http.DetectContentType(buffer)
+    }
+
     request.Header.Add("Content-Type", contentType)
     request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
     request.Header.Add("X-BlobStore-Write-Acl", b.DefaultWriteAcl)

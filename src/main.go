@@ -37,7 +37,7 @@ func main() {
 
     uploadCommand := parser.NewCommand("upload", "Upload file to blobstore")
     uploadFilename := uploadCommand.String("f", "filename", &argparse.Options{Help: "Name of file uploaded to blobstore", Required: true})
-    cType := uploadCommand.String("t", "type", &argparse.Options{Help: "Content type of uploaded file", Required: true})
+    cType := uploadCommand.String("t", "type", &argparse.Options{Help: "Content type of uploaded file"})
     source := uploadCommand.String("s", "source", &argparse.Options{Help: "Local file to upload", Required: true})
 
     downloadCommand := parser.NewCommand("download", "Download file from blobstore")

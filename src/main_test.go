@@ -82,6 +82,29 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
     assert.Equal(t, string(*makefileBytes), contents)
 }
 
+func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
+    cmd := exec.Command("blob", "upload", "--filename", remoteMakefilePath, "--source", makefilePath)
+
+    cmd.Env = append(os.Environ(),
+        "BLOBSTORE_READ_ACL=" + testingAccessToken,
+        "BLOBSTORE_WRITE_ACL=" + testingAccessToken,
+    )
+
+    output, err := cmd.CombinedOutput()
+    if err != nil {
+        assert.Failf(t, err.Error(), string(output))
+    }
+
+    assert.Nil(t, err)
+    assert.Equal(t, "", string(output))
+
+    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
+    contents, err := api.GetFileContents(remoteMakefilePath)
+    assert.Nil(t, err)
+
+    assert.Equal(t, string(*makefileBytes), contents)
+}
+
 func TestCommandLineInterfaceUploadFails(t *testing.T) {
     cmd := exec.Command("blob", "upload", "--filename", remoteMakefilePath, "--type", "text/plain", "--source", makefilePath)
 
