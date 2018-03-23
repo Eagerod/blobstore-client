@@ -5,6 +5,7 @@ import (
     "io/ioutil"
     "os"
     "os/exec"
+    "strings"
     "testing"
 )
 
@@ -26,6 +27,21 @@ const remoteMakefilePath string = "clientlib/testing/Makefile"
 
 var blobCliHelpString *string
 var makefileBytes *[]byte
+
+func makeEnv(withToken string) []string {
+    env := os.Environ()
+    copyEnv := make([]string, 0, len(env))
+    for i := range env {
+        if strings.HasPrefix(env[i], "BLOBSTORE_READ_ACL=") || strings.HasPrefix(env[i], "BLOBSTORE_WRITE_ACL=") {
+            continue
+        }
+        copyEnv = append(copyEnv, env[i])
+    }
+
+    copyEnv = append(copyEnv, "BLOBSTORE_READ_ACL=" + withToken, "BLOBSTORE_WRITE_ACL=" + withToken)
+
+    return copyEnv
+}
 
 func TestMain(m *testing.M) {
     if _, err := exec.LookPath("blob"); err != nil {
@@ -61,11 +77,7 @@ func TestMain(m *testing.M) {
 
 func TestCommandLineInterfaceUpload(t *testing.T) {
     cmd := exec.Command("blob", "upload", "--filename", remoteMakefilePath, "--type", "text/plain", "--source", makefilePath)
-
-    cmd.Env = append(os.Environ(),
-        "BLOBSTORE_READ_ACL=" + testingAccessToken,
-        "BLOBSTORE_WRITE_ACL=" + testingAccessToken,
-    )
+    cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
     if err != nil {
@@ -84,11 +96,7 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
 
 func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
     cmd := exec.Command("blob", "upload", "--filename", remoteMakefilePath, "--source", makefilePath)
-
-    cmd.Env = append(os.Environ(),
-        "BLOBSTORE_READ_ACL=" + testingAccessToken,
-        "BLOBSTORE_WRITE_ACL=" + testingAccessToken,
-    )
+    cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
     if err != nil {
@@ -107,6 +115,7 @@ func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
 
 func TestCommandLineInterfaceUploadFails(t *testing.T) {
     cmd := exec.Command("blob", "upload", "--filename", remoteMakefilePath, "--type", "text/plain", "--source", makefilePath)
+    cmd.Env = makeEnv("")
 
     output, err := cmd.CombinedOutput()
     if err == nil {
@@ -122,11 +131,7 @@ func TestCommandLineInterfaceDownload(t *testing.T) {
     api.UploadFile(remoteMakefilePath, makefilePath, "text/plain")
 
     cmd := exec.Command("blob", "download", "--filename", remoteMakefilePath, "--dest", "../Makefile2")
-
-    cmd.Env = append(os.Environ(),
-        "BLOBSTORE_READ_ACL=" + testingAccessToken,
-        "BLOBSTORE_WRITE_ACL=" + testingAccessToken,
-    )
+    cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
     if err != nil {
@@ -150,11 +155,7 @@ func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
     api.UploadFile(remoteMakefilePath, makefilePath, "text/plain")
 
     cmd := exec.Command("blob", "download", "--filename", remoteMakefilePath)
-
-    cmd.Env = append(os.Environ(),
-        "BLOBSTORE_READ_ACL=" + testingAccessToken,
-        "BLOBSTORE_WRITE_ACL=" + testingAccessToken,
-    )
+    cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
     if err != nil {
@@ -167,6 +168,7 @@ func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
 
 func TestCommandLineInterfaceDownloadFails(t *testing.T) {
     cmd := exec.Command("blob", "download", "--filename", remoteMakefilePath, "--dest", "../Makefile2")
+    cmd.Env = makeEnv("")
 
     output, err := cmd.CombinedOutput()
     if err == nil {
@@ -182,11 +184,7 @@ func TestCommandLineInterfaceAppend(t *testing.T) {
     api.UploadFile(remoteMakefilePath, makefilePath, "text/plain")
 
     cmd := exec.Command("blob", "append", "--filename", remoteMakefilePath, "--string", "something extra")
-
-    cmd.Env = append(os.Environ(),
-        "BLOBSTORE_READ_ACL=" + testingAccessToken,
-        "BLOBSTORE_WRITE_ACL=" + testingAccessToken,
-    )
+    cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
     if err != nil {
@@ -204,6 +202,7 @@ func TestCommandLineInterfaceAppend(t *testing.T) {
 
 func TestCommandLineInterfaceAppendFails(t *testing.T) {
     cmd := exec.Command("blob", "append", "--filename", remoteMakefilePath, "--string", "something extra")
+    cmd.Env = makeEnv("")
 
     output, err := cmd.CombinedOutput()
     if err == nil {
