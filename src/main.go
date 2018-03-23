@@ -18,6 +18,20 @@ const BlobStoreReadAclEnvironmentVariable = "BLOBSTORE_READ_ACL"
 const BlobStoreWriteAclEnvironmentVariable = "BLOBSTORE_WRITE_ACL"
 const BlobStoreDefaultUrlBase = "https://aleem.haji.ca/blob"
 
+var emptyAcl string = ""
+var readAcl *string = &emptyAcl
+var writeAcl *string = &emptyAcl
+
+func init() {    
+    if acl, ok := os.LookupEnv(BlobStoreReadAclEnvironmentVariable); ok {
+        readAcl = &acl
+    }
+
+    if acl, ok := os.LookupEnv(BlobStoreWriteAclEnvironmentVariable); ok {
+        writeAcl = &acl
+    }
+}
+
 func main() {
     parser := argparse.NewParser("blob", "Upload and download from blobstore.")
 
@@ -40,17 +54,7 @@ func main() {
         os.Exit(1)
     }
 
-    readAcl, ok := os.LookupEnv(BlobStoreReadAclEnvironmentVariable)
-    if !ok {
-        readAcl = ""
-    }
-
-    writeAcl, ok := os.LookupEnv(BlobStoreWriteAclEnvironmentVariable)
-    if !ok {
-        writeAcl = ""
-    }
-
-    var b blobapi.IBlobStoreApiClient = blobapi.NewBlobStoreApiClient(BlobStoreDefaultUrlBase, readAcl, writeAcl)
+    var b blobapi.IBlobStoreApiClient = blobapi.NewBlobStoreApiClient(BlobStoreDefaultUrlBase, *readAcl, *writeAcl)
 
     switch {
     case uploadCommand.Happened():
