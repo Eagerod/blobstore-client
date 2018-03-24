@@ -2,12 +2,11 @@ package main;
 
 import (
     "errors"
-    "fmt"
     "os"
 )
 
 import (
-    "github.com/akamensky/argparse"
+    "github.com/spf13/cobra"
 )
 
 import (
@@ -33,46 +32,78 @@ func init() {
 }
 
 func main() {
-    parser := argparse.NewParser("blob", "Upload and download from blobstore.")
-
-    uploadCommand := parser.NewCommand("upload", "Upload file to blobstore")
-    uploadFilename := uploadCommand.String("f", "filename", &argparse.Options{Help: "Name of file uploaded to blobstore", Required: true})
-    cType := uploadCommand.String("t", "type", &argparse.Options{Help: "Content type of uploaded file"})
-    source := uploadCommand.String("s", "source", &argparse.Options{Help: "Local file to upload", Required: true})
-
-    downloadCommand := parser.NewCommand("download", "Download file from blobstore")
-    downloadFilename := downloadCommand.String("f", "filename", &argparse.Options{Help: "Name of file downloaded from blobstore", Required: true})    
-    destination := downloadCommand.String("d", "dest", &argparse.Options{Help: "Local file to write", Required: false})    
-
-    appendCommand := parser.NewCommand("append", "Append to an existing file on blobstore")
-    appendFilename := appendCommand.String("f", "filename", &argparse.Options{Help: "Name of file on blobstore", Required: true})    
-    appendString := appendCommand.String("s", "string", &argparse.Options{Help: "String to append to existing file", Required: true})    
-
-    err := parser.Parse(os.Args)
-    if err != nil {
-        fmt.Println(parser.Usage(err))
-        os.Exit(1)
-    }
-
     var b blobapi.IBlobStoreApiClient = blobapi.NewBlobStoreApiClient(BlobStoreDefaultUrlBase, *readAcl, *writeAcl)
 
-    switch {
-    case uploadCommand.Happened():
-        err = b.UploadFile(*uploadFilename, *source, *cType)
-    case downloadCommand.Happened():
-        if *destination == "" {
-            err = b.CatFile(*downloadFilename)
-        } else {
-            err = b.DownloadFile(*downloadFilename, *destination)
-        }
-    case appendCommand.Happened():
-        err = b.AppendString(*appendFilename, *appendString)
-    default:
-        err = errors.New("Failed to identify command to run")
+    var contentType string
+    var appendString string
+
+    baseCommand := &cobra.Command{
+        Use: "blob",
+        Short: "Blobstore CLI",
+        Long: "Download, upload or append data to the blobstore",
+        SilenceUsage: false,
+        Run: func(cmd *cobra.Command, args []string) {
+            cmd.Usage()
+        },
     }
 
-    if err != nil {
-        fmt.Println(parser.Usage(err))
+    uploadCommand := &cobra.Command{
+        Use: "upload",
+        Short: "Upload to blobstore",
+        Long: "Upload a file to blobstore from the local machine",
+        Args: cobra.ExactArgs(2),
+        RunE: func(cmd *cobra.Command, args []string) error {
+            uploadFilename := args[0]
+            source := args[1]
+            return b.UploadFile(uploadFilename, source, contentType)
+        },
+    }
+
+    downloadCommand := &cobra.Command{
+        Use: "download",
+        Short: "Download from blobstore",
+        Long: "Download a file from blobstore to the local machine",
+        Args: cobra.RangeArgs(1, 2),
+        RunE: func(cmd *cobra.Command, args []string) error {
+            downloadFilename := args[0]
+            dest := ""
+
+            if len(args) == 2 {
+                dest = args[1]                
+            }
+
+            if dest == "" {
+                return b.CatFile(downloadFilename)
+            } else {
+                return b.DownloadFile(downloadFilename, dest)
+            }
+        },
+    }
+
+    appendCommand := &cobra.Command{
+        Use: "append",
+        Short: "Append to blobstore",
+        Long: "Append to an existing file in the blobstore",
+        Args: cobra.ExactArgs(1),
+        RunE: func(cmd *cobra.Command, args []string) error {
+            if appendString == "" {
+                return errors.New("Nothing to append")
+            }
+
+            sourceFilename := args[0]
+            return b.AppendString(sourceFilename, appendString)
+        },
+    }
+
+    uploadCommand.Flags().StringVarP(&contentType, "type", "t", "", "Content type of uploaded file")
+    appendCommand.Flags().StringVarP(&appendString, "string", "s", "", "String to append")
+
+    baseCommand.AddCommand(uploadCommand)
+    baseCommand.AddCommand(downloadCommand)
+    baseCommand.AddCommand(appendCommand)
+
+    if err := baseCommand.Execute(); err != nil {
         os.Exit(1)
     }
+    os.Exit(0)
 }

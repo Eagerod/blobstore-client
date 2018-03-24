@@ -25,7 +25,8 @@ const testingAccessToken string = "ad4c3f2d4fb81f4118f837464b961eebda026d8c52a7c
 const makefilePath string = "../Makefile"
 const remoteMakefilePath string = "clientlib/testing/Makefile"
 
-var blobCliHelpString *string
+var commands []string = make([]string, 0, 0)
+var blobCliHelpStrings map[string]string = make(map[string]string, 0)
 var makefileBytes *[]byte
 
 func makeEnv(withToken string) []string {
@@ -48,14 +49,22 @@ func TestMain(m *testing.M) {
         panic("Failed to find executable to run system tests")
     }
 
-    cmd := exec.Command("blob", "-h")
-    str, err := cmd.CombinedOutput()
-    if err != nil {
-        panic("Failed to get help text from blob binary")
-    }
+    commands = append(commands, "", "upload", "download", "append")
 
-    stringVal := string(str)
-    blobCliHelpString = &stringVal
+    for i := range commands {
+        command := commands[i]
+        cmd := exec.Command("blob", command, "-h")
+
+        str, err := cmd.CombinedOutput()
+        if err != nil {
+            panic("Failed to get help text from blob binary")
+        }
+
+        // Each explicit help output adds the command's description to the output
+        // so remove the first line.
+        stringPieces := strings.SplitN(string(str), "\n\n", 2)
+        blobCliHelpStrings[command] = stringPieces[1]
+    }
 
     file, err := os.Open(makefilePath)
     if err != nil {
@@ -76,7 +85,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCommandLineInterfaceUpload(t *testing.T) {
-    cmd := exec.Command("blob", "upload", "--filename", remoteMakefilePath, "--type", "text/plain", "--source", makefilePath)
+    cmd := exec.Command("blob", "upload", remoteMakefilePath, makefilePath, "--type", "text/plain")
     cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
@@ -95,7 +104,7 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
 }
 
 func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
-    cmd := exec.Command("blob", "upload", "--filename", remoteMakefilePath, "--source", makefilePath)
+    cmd := exec.Command("blob", "upload", remoteMakefilePath, makefilePath)
     cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
@@ -114,7 +123,7 @@ func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
 }
 
 func TestCommandLineInterfaceUploadFails(t *testing.T) {
-    cmd := exec.Command("blob", "upload", "--filename", remoteMakefilePath, "--type", "text/plain", "--source", makefilePath)
+    cmd := exec.Command("blob", "upload", remoteMakefilePath, makefilePath, "--type", "text/plain")
     cmd.Env = makeEnv("")
 
     output, err := cmd.CombinedOutput()
@@ -122,7 +131,7 @@ func TestCommandLineInterfaceUploadFails(t *testing.T) {
         assert.Fail(t, "Expected a failure from download command")
     }
 
-    expectedOutput := "Blobstore Upload Failed (403): \n" + *blobCliHelpString + "\n"
+    expectedOutput := "Error: Blobstore Upload Failed (403): \n" + blobCliHelpStrings["upload"] + "\n"
     assert.Equal(t, expectedOutput, string(output))
 }
 
@@ -130,7 +139,7 @@ func TestCommandLineInterfaceDownload(t *testing.T) {
     api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
     api.UploadFile(remoteMakefilePath, makefilePath, "text/plain")
 
-    cmd := exec.Command("blob", "download", "--filename", remoteMakefilePath, "--dest", "../Makefile2")
+    cmd := exec.Command("blob", "download", remoteMakefilePath, "../Makefile2")
     cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
@@ -154,7 +163,7 @@ func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
     api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
     api.UploadFile(remoteMakefilePath, makefilePath, "text/plain")
 
-    cmd := exec.Command("blob", "download", "--filename", remoteMakefilePath)
+    cmd := exec.Command("blob", "download", remoteMakefilePath)
     cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
@@ -167,7 +176,7 @@ func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownloadFails(t *testing.T) {
-    cmd := exec.Command("blob", "download", "--filename", remoteMakefilePath, "--dest", "../Makefile2")
+    cmd := exec.Command("blob", "download", remoteMakefilePath, "../Makefile2")
     cmd.Env = makeEnv("")
 
     output, err := cmd.CombinedOutput()
@@ -175,7 +184,7 @@ func TestCommandLineInterfaceDownloadFails(t *testing.T) {
         assert.Fail(t, "Expected a failure from download command")
     }
 
-    expectedOutput := `Blobstore Download Failed (404): {"code":"NotFound","message":"File not found"}` + "\n" + *blobCliHelpString + "\n"
+    expectedOutput := `Error: Blobstore Download Failed (404): {"code":"NotFound","message":"File not found"}` + "\n" + blobCliHelpStrings["download"] + "\n"
     assert.Equal(t, expectedOutput, string(output))
 }
 
@@ -183,7 +192,7 @@ func TestCommandLineInterfaceAppend(t *testing.T) {
     api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
     api.UploadFile(remoteMakefilePath, makefilePath, "text/plain")
 
-    cmd := exec.Command("blob", "append", "--filename", remoteMakefilePath, "--string", "something extra")
+    cmd := exec.Command("blob", "append", remoteMakefilePath, "--string", "something extra")
     cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
@@ -201,7 +210,7 @@ func TestCommandLineInterfaceAppend(t *testing.T) {
 }
 
 func TestCommandLineInterfaceAppendFails(t *testing.T) {
-    cmd := exec.Command("blob", "append", "--filename", remoteMakefilePath, "--string", "something extra")
+    cmd := exec.Command("blob", "append", remoteMakefilePath, "--string", "something extra")
     cmd.Env = makeEnv("")
 
     output, err := cmd.CombinedOutput()
@@ -209,6 +218,6 @@ func TestCommandLineInterfaceAppendFails(t *testing.T) {
         assert.Fail(t, "Expected a failure from append command")
     }
 
-    expectedOutput := `Blobstore Download Failed (404): {"code":"NotFound","message":"File not found"}` + "\n" + *blobCliHelpString + "\n"
+    expectedOutput := `Error: Blobstore Download Failed (404): {"code":"NotFound","message":"File not found"}` + "\n" + blobCliHelpStrings["append"] + "\n"
     assert.Equal(t, expectedOutput, string(output))
 }
