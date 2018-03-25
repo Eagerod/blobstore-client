@@ -3,6 +3,7 @@ package main;
 import (
     "errors"
     "os"
+    "strings"
 )
 
 import (
@@ -47,35 +48,35 @@ func main() {
         },
     }
 
-    uploadCommand := &cobra.Command{
-        Use: "upload",
-        Short: "Upload to blobstore",
-        Long: "Upload a file to blobstore from the local machine",
-        Args: cobra.ExactArgs(2),
-        RunE: func(cmd *cobra.Command, args []string) error {
-            uploadFilename := args[0]
-            source := args[1]
-            return b.UploadFile(uploadFilename, source, contentType)
-        },
-    }
-
-    downloadCommand := &cobra.Command{
-        Use: "download",
-        Short: "Download from blobstore",
-        Long: "Download a file from blobstore to the local machine",
+    cpCommand := &cobra.Command{
+        Use: "cp",
+        Short: "Copy files to and from blobstore",
+        Long: "Upload files to or download files from the blobstore",
         Args: cobra.RangeArgs(1, 2),
         RunE: func(cmd *cobra.Command, args []string) error {
-            downloadFilename := args[0]
-            dest := ""
-
-            if len(args) == 2 {
-                dest = args[1]                
+            if len(args) == 1 {
+                if !strings.HasPrefix(args[0], "blob:/") {
+                    return errors.New("Must download files from blob:/")
+                }
+                actualDownloadPath := strings.Replace(args[0], "blob:/", "", 1)
+                return b.CatFile(actualDownloadPath)
             }
 
-            if dest == "" {
-                return b.CatFile(downloadFilename)
+            // Determine if this is an upload or download command based on which 
+            // order the parameters came in.
+            if strings.HasPrefix(args[0], "blob:/") {
+                if strings.HasPrefix(args[1], "blob:/") {
+                    return errors.New("No support for copying files in the blobstore directly")
+                }
+
+                // Download to local file
+                actualDownloadPath := strings.Replace(args[0], "blob:/", "", 1)
+                return b.DownloadFile(actualDownloadPath, args[1])
+            } else if strings.HasPrefix(args[1], "blob:/") {
+                actualUploadPath := strings.Replace(args[1], "blob:/", "", 1)
+                return b.UploadFile(actualUploadPath, args[0], contentType)
             } else {
-                return b.DownloadFile(downloadFilename, dest)
+                return errors.New("Must provide at least one blob:/ path to upload to or download from")
             }
         },
     }
@@ -90,16 +91,19 @@ func main() {
                 return errors.New("Nothing to append")
             }
 
-            sourceFilename := args[0]
+            if !strings.HasPrefix(args[0], "blob:/") {
+                return errors.New("Cannot append to local file")
+            }
+
+            sourceFilename := strings.Replace(args[0], "blob:/", "", 1)
             return b.AppendString(sourceFilename, appendString)
         },
     }
 
-    uploadCommand.Flags().StringVarP(&contentType, "type", "t", "", "Content type of uploaded file")
+    cpCommand.Flags().StringVarP(&contentType, "type", "t", "", "Content type of uploaded file")
     appendCommand.Flags().StringVarP(&appendString, "string", "s", "", "String to append")
 
-    baseCommand.AddCommand(uploadCommand)
-    baseCommand.AddCommand(downloadCommand)
+    baseCommand.AddCommand(cpCommand)
     baseCommand.AddCommand(appendCommand)
 
     if err := baseCommand.Execute(); err != nil {
