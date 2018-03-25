@@ -106,8 +106,8 @@ release: $(BIN_NAME) build/$(BLOB_LATEST_VERSION).zip build/installer.sh
 		echo >&2 "Write ACL not present in environment; aborting release."; \
 		exit -1; \
 	fi;
-	$(BIN_NAME) upload -f "$(UPLOAD_PATH)/$(BLOB_LATEST_VERSION).zip" -t "application/zip" -s "build/$(BLOB_LATEST_VERSION).zip"
-	$(BIN_NAME) upload -f "$(UPLOAD_PATH)/installer.sh" -t "text/x-shellscript" -s build/installer.sh
+	$(BIN_NAME) cp "build/$(BLOB_LATEST_VERSION).zip" "blob:/$(UPLOAD_PATH)/$(BLOB_LATEST_VERSION).zip"
+	$(BIN_NAME) cp "build/installer.sh" "blob:/$(UPLOAD_PATH)/installer.sh"
 
 .PHONY: clean
 clean:
