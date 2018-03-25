@@ -89,10 +89,7 @@ func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, con
     }
 
     if contentType == "" {
-        streamCopy := bufio.NewReader(stream)
-
-        var buffer []byte = make([]byte, 0, 256)
-        _, err = streamCopy.Read(buffer)
+        buffer, err := stream.Peek(512)
         if err != nil && err != io.EOF {
             return err
         }
