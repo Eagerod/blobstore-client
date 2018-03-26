@@ -2,6 +2,7 @@ package blobapi;
 
 import (
     "bufio"
+    "encoding/json"
     "errors"
     "fmt"
     "io"
@@ -42,6 +43,8 @@ type IBlobStoreApiClient interface {
     AppendStream(path string, stream *bufio.Reader) error
     AppendString(path string, value string) error
     AppendFile(path string, source string) error
+
+    ListPrefix(prefix string) ([]string, error)
 }
 
 
@@ -226,4 +229,40 @@ func (b *BlobStoreApiClient) AppendFile(path string, source string) error {
 
     fileReader := bufio.NewReader(file)
     return b.AppendStream(path, fileReader)
+}
+
+func (b *BlobStoreApiClient) ListPrefix(prefix string) ([]string, error) {
+    paths := make([]string, 0)
+
+    for strings.HasPrefix(prefix, "/") {
+        prefix = prefix[1:]
+    }
+
+    request, err := http.NewRequest("GET", b.route("_dir/" + prefix), nil)
+    if err != nil {
+        return paths, err
+    }
+
+    request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
+
+    response, err := b.http.Do(request)
+    if err != nil {
+        return paths, err
+    }
+
+    if response.StatusCode != 200 {
+        body, err := ioutil.ReadAll(response.Body)
+        if err != nil {
+            return paths, err
+        }
+
+        return paths, errors.New(fmt.Sprintf("Blobstore List Failed (%d): %s", response.StatusCode, string(body)))
+    }
+
+    err = json.NewDecoder(response.Body).Decode(&paths)
+    if err != nil {
+        return paths, err
+    }
+
+    return paths, nil
 }

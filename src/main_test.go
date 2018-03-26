@@ -222,3 +222,19 @@ func TestCommandLineInterfaceAppendFails(t *testing.T) {
     expectedOutput := `Error: Blobstore Download Failed (404): {"code":"NotFound","message":"File not found"}` + "\n" + blobCliHelpStrings["append"] + "\n"
     assert.Equal(t, expectedOutput, string(output))
 }
+
+func TestCommandLineInterfaceList(t *testing.T) {
+    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
+    api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
+
+    cmd := exec.Command("blob", "ls", "blob:/clientlib/testing/")
+    cmd.Env = makeEnv(testingAccessToken)
+
+    output, err := cmd.CombinedOutput()
+    if err != nil {
+        assert.Failf(t, err.Error(), string(output))
+    }
+
+    assert.Nil(t, err)
+    assert.Equal(t, "clientlib/testing/makefile\n", string(output))
+}

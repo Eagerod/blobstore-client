@@ -2,6 +2,7 @@ package main;
 
 import (
     "errors"
+    "fmt"
     "os"
     "strings"
 )
@@ -119,11 +120,42 @@ func main() {
         },
     }
 
+    lsCommand := &cobra.Command{
+        Use: "ls",
+        Short: "List files on blobstore",
+        Long: "List existing files in the blobstore",
+        Args: cobra.RangeArgs(0, 1),
+        RunE: func(cmd *cobra.Command, args []string) error {
+            prefix := ""
+
+            if len(args) == 1 {
+                lsArg := newBlobParsedArg(args[0])
+                if !lsArg.isRemote {
+                    return errors.New("Must start remote ls path with blob:/")
+                }
+
+                prefix = lsArg.path
+            }
+            
+            files, err := b.ListPrefix(prefix)
+            if err != nil {
+                return err
+            }
+
+            for i := range files {
+                fmt.Println(files[i])
+            }
+
+            return nil
+        },
+    }
+
     cpCommand.Flags().StringVarP(&contentType, "type", "t", "", "Content type of uploaded file")
     appendCommand.Flags().StringVarP(&appendString, "string", "s", "", "String to append")
 
     baseCommand.AddCommand(cpCommand)
     baseCommand.AddCommand(appendCommand)
+    baseCommand.AddCommand(lsCommand)
 
     if err := baseCommand.Execute(); err != nil {
         os.Exit(1)
