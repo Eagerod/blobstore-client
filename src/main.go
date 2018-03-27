@@ -66,7 +66,7 @@ func main() {
     }
 
     cpCommand := &cobra.Command{
-        Use: "cp",
+        Use: "cp <LocalPath> <BlobPath> or <BlobPath> <LocalPath>",
         Short: "Copy files to and from blobstore",
         Long: "Upload files to or download files from the blobstore",
         Args: cobra.RangeArgs(1, 2),
@@ -101,7 +101,7 @@ func main() {
     }
 
     appendCommand := &cobra.Command{
-        Use: "append",
+        Use: "append <BlobPath>",
         Short: "Append to blobstore",
         Long: "Append to an existing file in the blobstore",
         Args: cobra.ExactArgs(1),
@@ -121,7 +121,7 @@ func main() {
     }
 
     lsCommand := &cobra.Command{
-        Use: "ls",
+        Use: "ls [BlobPath]",
         Short: "List files on blobstore",
         Long: "List existing files in the blobstore",
         Args: cobra.RangeArgs(0, 1),
