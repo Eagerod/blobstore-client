@@ -245,8 +245,8 @@ func (b *BlobStoreApiClient) StatFile(path string) (*BlobFileStat, error) {
         rv.Path = ""
         rv.Name = path
     } else {
-        rv.Path = path[0:finalSlash]
-        rv.Name = path[finalSlash:]
+        rv.Path = path[0:finalSlash+1]
+        rv.Name = path[finalSlash+1:]
     }
 
     size, err := strconv.Atoi(response.Header.Get("Content-Length"))

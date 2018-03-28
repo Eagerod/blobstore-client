@@ -49,9 +49,11 @@ const (
 
     RemoteTestBaseUrl = "https://example.com/deeper"
     RemoteTestFilename = "remote_filename"
+    RemoteTestDeepFilename = "path/to/remote_filename"
     RemoteTestFileManualMimeType = "text/plain"
     RemoteTestFileAutomaticMimeType = "text/plain; charset=utf-8"
     RemoteTestFileUrl = "https://example.com/deeper/remote_filename"
+    RemoteTestDeepFileUrl = "https://example.com/deeper/path/to/remote_filename"
     RemoteTestListDirUrl = "https://example.com/deeper/_dir/"
     RemoteTestListDirRecursiveUrl = "https://example.com/deeper/_dir/?recursive=true"
     RemoteTestReadSecret = "read secret"
@@ -350,11 +352,45 @@ func TestStatRequest(t *testing.T) {
     fileStat, err := api.StatFile(RemoteTestFilename)
     assert.Nil(t, err)
 
-    assert.Equal(t, fileStat.Path, "")
-    assert.Equal(t, fileStat.Name, RemoteTestFilename)
-    assert.Equal(t, fileStat.MimeType, RemoteTestFileManualMimeType)
-    assert.Equal(t, fileStat.SizeBytes, 1024)
-    assert.Equal(t, fileStat.Exists, true)
+    assert.Equal(t, "", fileStat.Path)
+    assert.Equal(t, RemoteTestFilename, fileStat.Name)
+    assert.Equal(t, RemoteTestFileManualMimeType, fileStat.MimeType)
+    assert.Equal(t, 1024, fileStat.SizeBytes)
+    assert.Equal(t, true, fileStat.Exists)
+}
+
+func TestStatRequestLongerFilename(t *testing.T) {
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, RemoteTestStatHttpMethod, request.Method)
+        assert.Equal(t, RemoteTestDeepFileUrl, request.URL.String())
+        assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+
+        response := http.Response{
+            StatusCode: 200,
+        }
+        
+        response.Header = make(map[string][]string)
+        response.Header.Set("Content-Type", RemoteTestFileManualMimeType)
+        response.Header.Set("Content-Length", "1024")
+
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+
+    fileStat, err := api.StatFile(RemoteTestDeepFilename)
+    assert.Nil(t, err)
+
+    assert.Equal(t, "path/to/", fileStat.Path,)
+    assert.Equal(t, RemoteTestFilename, fileStat.Name)
+    assert.Equal(t, RemoteTestFileManualMimeType, fileStat.MimeType)
+    assert.Equal(t, 1024, fileStat.SizeBytes)
+    assert.Equal(t, true, fileStat.Exists)
 }
 
 func TestStatRequestDoesntExist(t *testing.T) {
@@ -380,11 +416,11 @@ func TestStatRequestDoesntExist(t *testing.T) {
     fileStat, err := api.StatFile(RemoteTestFilename)
     assert.Nil(t, err)
 
-    assert.Equal(t, fileStat.Path, "")
-    assert.Equal(t, fileStat.Name, RemoteTestFilename)
-    assert.Equal(t, fileStat.MimeType, "")
-    assert.Equal(t, fileStat.SizeBytes, 0)
-    assert.Equal(t, fileStat.Exists, false)
+    assert.Equal(t, "", fileStat.Path)
+    assert.Equal(t, RemoteTestFilename, fileStat.Name)
+    assert.Equal(t, "", fileStat.MimeType)
+    assert.Equal(t, 0, fileStat.SizeBytes)
+    assert.Equal(t, false, fileStat.Exists)
 }
 
 func TestStatRequestFails(t *testing.T) {
