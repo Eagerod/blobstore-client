@@ -55,6 +55,7 @@ func main() {
     var contentType string
     var appendString string
     var recursive bool
+    var force bool
 
     baseCommand := &cobra.Command{
         Use: "blob",
@@ -94,8 +95,22 @@ func main() {
             }
 
             if cpArg0.isRemote {
+                if force == false {
+                    if _, err := os.Stat(cpArg1.path); err == nil {
+                        return errors.New("Destination file already exists on local machine; use --force to overwrite")
+                    }
+                }
                 return b.DownloadFile(cpArg0.path, cpArg1.path)
             } else {
+                if force == false {
+                    fileStat, err := b.StatFile(cpArg1.path)
+                    if err != nil {
+                        return err
+                    }
+                    if fileStat.Exists {
+                        return errors.New("Destination file already exists on blobstore; use --force to overwrite")
+                    }
+                }
                 return b.UploadFile(cpArg1.path, cpArg0.path, contentType)
             }
         },
@@ -152,6 +167,7 @@ func main() {
     }
 
     cpCommand.Flags().StringVarP(&contentType, "type", "t", "", "Content type of uploaded file")
+    cpCommand.Flags().BoolVarP(&force, "force", "f", false, "Force the copy if the destination already exists")
     appendCommand.Flags().StringVarP(&appendString, "string", "s", "", "String to append")
     lsCommand.Flags().BoolVarP(&recursive, "recursive", "r", false, "List all files and folders recursively")
 

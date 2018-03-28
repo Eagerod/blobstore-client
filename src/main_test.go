@@ -86,7 +86,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCommandLineInterfaceUpload(t *testing.T) {
-    cmd := exec.Command("blob", "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain")
+    cmd := exec.Command("blob", "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain", "--force")
     cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
@@ -105,7 +105,7 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
 }
 
 func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
-    cmd := exec.Command("blob", "cp", makefilePath, remoteMakefileCliPath)
+    cmd := exec.Command("blob", "cp", makefilePath, remoteMakefileCliPath, "--force")
     cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
@@ -123,8 +123,21 @@ func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
     assert.Equal(t, string(*makefileBytes), contents)
 }
 
-func TestCommandLineInterfaceUploadFails(t *testing.T) {
+func TestCommandLineInterfaceUploadAlreadyExists(t *testing.T) {
     cmd := exec.Command("blob", "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain")
+    cmd.Env = makeEnv(testingAccessToken)
+
+    output, err := cmd.CombinedOutput()
+    if err == nil {
+        assert.Fail(t, "Expected a failure from download command")
+    }
+
+    expectedOutput := "Error: Destination file already exists on blobstore; use --force to overwrite\n" + blobCliHelpStrings["cp"] + "\n"
+    assert.Equal(t, expectedOutput, string(output))
+}
+
+func TestCommandLineInterfaceUploadFails(t *testing.T) {
+    cmd := exec.Command("blob", "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain", "--force")
     cmd.Env = makeEnv("")
 
     output, err := cmd.CombinedOutput()
@@ -147,6 +160,7 @@ func TestCommandLineInterfaceDownload(t *testing.T) {
     if err != nil {
         assert.Failf(t, err.Error(), string(output))
     }
+    defer os.Remove("../Makefile2")
 
     assert.Nil(t, err)
     assert.Equal(t, "", string(output))
@@ -174,6 +188,19 @@ func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
 
     assert.Nil(t, err)
     assert.Equal(t, append(*makefileBytes, []byte("\n")...), output)
+}
+
+func TestCommandLineInterfaceDownloadFileAlreadyExists(t *testing.T) {
+    cmd := exec.Command("blob", "cp", remoteMakefileCliPath, makefilePath)
+    cmd.Env = makeEnv("")
+
+    output, err := cmd.CombinedOutput()
+    if err == nil {
+        assert.Fail(t, "Expected a failure from download command")
+    }
+
+    expectedOutput := `Error: Destination file already exists on local machine; use --force to overwrite` + "\n" + blobCliHelpStrings["cp"] + "\n"
+    assert.Equal(t, expectedOutput, string(output))
 }
 
 func TestCommandLineInterfaceDownloadFails(t *testing.T) {
