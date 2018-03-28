@@ -107,7 +107,7 @@ release: $(BIN_NAME) build/$(BLOB_LATEST_VERSION).zip build/installer.sh
 		exit -1; \
 	fi;
 	$(BIN_NAME) cp "build/$(BLOB_LATEST_VERSION).zip" "blob:/$(UPLOAD_PATH)/$(BLOB_LATEST_VERSION).zip"
-	$(BIN_NAME) cp "build/installer.sh" "blob:/$(UPLOAD_PATH)/installer.sh"
+	$(BIN_NAME) cp -f "build/installer.sh" "blob:/$(UPLOAD_PATH)/installer.sh"
 
 .PHONY: clean
 clean:
