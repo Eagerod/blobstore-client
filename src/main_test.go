@@ -50,7 +50,7 @@ func TestMain(m *testing.M) {
         panic("Failed to find executable to run system tests")
     }
 
-    commands = append(commands, "", "cp", "append")
+    commands = append(commands, "", "cp", "append", "rm")
 
     for i := range commands {
         command := commands[i]
@@ -300,4 +300,46 @@ func TestCommandLineInterfaceListRecursive(t *testing.T) {
     }
 
     assert.True(t, found, "Did not find clientlib/testing/makefile in blobstorage.")
+}
+
+func TestCommandLineInterfaceDelete(t *testing.T) {
+    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
+    api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
+
+    cmd := exec.Command("blob", "rm", remoteMakefileCliPath)
+    cmd.Env = makeEnv(testingAccessToken)
+
+    output, err := cmd.CombinedOutput()
+    if err != nil {
+        assert.Failf(t, err.Error(), string(output))
+    }
+
+    assert.Nil(t, err)
+    assert.Equal(t, "", string(output))
+
+    stat, err := api.StatFile(remoteMakefileRelPath)
+    assert.Nil(t, err)
+
+    assert.Equal(t, stat.Exists, false)
+}
+
+func TestCommandLineInterfaceDeleteFails(t *testing.T) {
+    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
+    api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
+
+    cmd := exec.Command("blob", "rm", remoteMakefileCliPath)
+    cmd.Env = makeEnv("")
+
+    output, err := cmd.CombinedOutput()
+    if err == nil {
+        assert.Fail(t, "Expected a failure from delete command")
+    }
+
+    expectedOutput := "Error: Blobstore Delete Failed (403): \n" + blobCliHelpStrings["rm"] + "\n"
+    assert.Equal(t, expectedOutput, string(output))
+
+    stat, err := api.StatFile(remoteMakefileRelPath)
+    assert.Nil(t, err)
+
+    assert.Equal(t, stat.Exists, true)
 }

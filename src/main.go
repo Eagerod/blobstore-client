@@ -166,6 +166,22 @@ func main() {
         },
     }
 
+    rmCommand := &cobra.Command{
+        Use: "rm <BlobPath>",
+        Short: "Remove from blobstore",
+        Long: "Delete a file from the blobstore",
+        Args: cobra.ExactArgs(1),
+        RunE: func(cmd *cobra.Command, args []string) error {
+            rmArg := newBlobParsedArg(args[0])
+
+            if !rmArg.isRemote {
+                return errors.New("Cannot delete a local file")
+            }
+
+            return b.DeleteFile(rmArg.path)
+        },
+    }
+
     cpCommand.Flags().StringVarP(&contentType, "type", "t", "", "Content type of uploaded file")
     cpCommand.Flags().BoolVarP(&force, "force", "f", false, "Force the copy if the destination already exists")
     appendCommand.Flags().StringVarP(&appendString, "string", "s", "", "String to append")
@@ -174,6 +190,7 @@ func main() {
     baseCommand.AddCommand(cpCommand)
     baseCommand.AddCommand(appendCommand)
     baseCommand.AddCommand(lsCommand)
+    baseCommand.AddCommand(rmCommand)
 
     if err := baseCommand.Execute(); err != nil {
         os.Exit(1)
