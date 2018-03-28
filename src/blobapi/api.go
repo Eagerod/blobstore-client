@@ -44,7 +44,7 @@ type IBlobStoreApiClient interface {
     AppendString(path string, value string) error
     AppendFile(path string, source string) error
 
-    ListPrefix(prefix string) ([]string, error)
+    ListPrefix(prefix string, recursive bool) ([]string, error)
 }
 
 
@@ -231,14 +231,19 @@ func (b *BlobStoreApiClient) AppendFile(path string, source string) error {
     return b.AppendStream(path, fileReader)
 }
 
-func (b *BlobStoreApiClient) ListPrefix(prefix string) ([]string, error) {
+func (b *BlobStoreApiClient) ListPrefix(prefix string, recursive bool) ([]string, error) {
     paths := make([]string, 0)
 
     for strings.HasPrefix(prefix, "/") {
         prefix = prefix[1:]
     }
 
-    request, err := http.NewRequest("GET", b.route("_dir/" + prefix), nil)
+    requestUrl := b.route("_dir/" + prefix)
+    if recursive {
+        requestUrl += "?recursive=true"
+    }
+
+    request, err := http.NewRequest("GET", requestUrl, nil)
     if err != nil {
         return paths, err
     }

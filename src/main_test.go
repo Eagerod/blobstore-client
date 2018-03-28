@@ -227,7 +227,7 @@ func TestCommandLineInterfaceList(t *testing.T) {
     api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
     api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
-    cmd := exec.Command("blob", "ls", "blob:/clientlib/testing/")
+    cmd := exec.Command("blob", "ls", "blob:/clientlib")
     cmd.Env = makeEnv(testingAccessToken)
 
     output, err := cmd.CombinedOutput()
@@ -236,5 +236,41 @@ func TestCommandLineInterfaceList(t *testing.T) {
     }
 
     assert.Nil(t, err)
-    assert.Equal(t, "clientlib/testing/makefile\n", string(output))
+
+    foundFiles := strings.Split(string(output), "\n")
+    found := false
+    for _, str := range foundFiles {
+        if str == "clientlib/testing/" {
+            found = true
+            break
+        }
+    }
+
+    assert.True(t, found, "Did not find clientlib/testing/ in blobstorage.")
+}
+
+func TestCommandLineInterfaceListRecursive(t *testing.T) {
+    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", testingAccessToken, testingAccessToken)
+    api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
+
+    cmd := exec.Command("blob", "ls", "blob:/clientlib", "-r")
+    cmd.Env = makeEnv(testingAccessToken)
+
+    output, err := cmd.CombinedOutput()
+    if err != nil {
+        assert.Failf(t, err.Error(), string(output))
+    }
+
+    assert.Nil(t, err)
+
+    foundFiles := strings.Split(string(output), "\n")
+    found := false
+    for _, str := range foundFiles {
+        if str == "clientlib/testing/makefile" {
+            found = true
+            break
+        }
+    }
+
+    assert.True(t, found, "Did not find clientlib/testing/makefile in blobstorage.")
 }

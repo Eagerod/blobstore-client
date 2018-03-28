@@ -414,7 +414,36 @@ func TestListRequest(t *testing.T) {
     }
 
     api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
-    filenames, err := api.ListPrefix("/")
+    filenames, err := api.ListPrefix("/", false)
+    assert.Nil(t, err)
+
+    assert.Equal(t, []string{"file-1", "file-2", "file-3"}, filenames)
+}
+
+func TestListRequestRecursive(t *testing.T) {
+    api := NewBlobStoreApiClient("https://example.org/deeper", "read secret", "write secret")
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, "GET", request.Method)
+        assert.Equal(t, "https://example.org/deeper/_dir/?recursive=true", request.URL.String())
+        assert.Equal(t, "read secret", request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+
+        files := []string{"file-1", "file-2", "file-3"}
+        filesBytes, err := json.Marshal(files)
+        assert.Nil(t, err)
+
+        response := http.Response{
+            StatusCode: 200,
+            Body: ioutil.NopCloser(bytes.NewReader(filesBytes)),
+        }
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+    filenames, err := api.ListPrefix("/", true)
     assert.Nil(t, err)
 
     assert.Equal(t, []string{"file-1", "file-2", "file-3"}, filenames)
@@ -435,6 +464,6 @@ func TestListRequestFails(t *testing.T) {
 
 
     api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
-    _, err := api.ListPrefix("/")
+    _, err := api.ListPrefix("/", false)
     assert.Equal(t, "Blobstore List Failed (500): {\"code\":\"BigProblem\",\"message\":\"The code is broken\"}", err.Error())
 }

@@ -54,6 +54,7 @@ func main() {
 
     var contentType string
     var appendString string
+    var recursive bool
 
     baseCommand := &cobra.Command{
         Use: "blob",
@@ -137,7 +138,7 @@ func main() {
                 prefix = lsArg.path
             }
             
-            files, err := b.ListPrefix(prefix)
+            files, err := b.ListPrefix(prefix, recursive)
             if err != nil {
                 return err
             }
@@ -152,6 +153,7 @@ func main() {
 
     cpCommand.Flags().StringVarP(&contentType, "type", "t", "", "Content type of uploaded file")
     appendCommand.Flags().StringVarP(&appendString, "string", "s", "", "String to append")
+    lsCommand.Flags().BoolVarP(&recursive, "recursive", "r", false, "List all files and folders recursively")
 
     baseCommand.AddCommand(cpCommand)
     baseCommand.AddCommand(appendCommand)
