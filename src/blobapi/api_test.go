@@ -62,6 +62,7 @@ const (
     RemoteTestDownloadHttpMethod = "GET"
     RemoteTestStatHttpMethod = "HEAD"
     RemoteTestListDirHttpMethod = "GET"
+    RemoteTestDeleteHttpMethod = "DELETE"
 )
 
 func TestCreation(t *testing.T) {
@@ -650,4 +651,48 @@ func TestListRequestFails(t *testing.T) {
     api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
     _, err := api.ListPrefix("/", false)
     assert.Equal(t, "Blobstore List Failed (500): {\"code\":\"BigProblem\",\"message\":\"The code is broken\"}", err.Error())
+}
+
+func TestDeleteRequest(t *testing.T) {
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, RemoteTestDeleteHttpMethod, request.Method)
+        assert.Equal(t, RemoteTestFileUrl, request.URL.String())
+        assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, RemoteTestWriteSecret, request.Header.Get("X-BlobStore-Write-Acl"))
+
+        response := http.Response{
+            StatusCode: 200,
+        }
+
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+
+    err := api.DeleteFile(RemoteTestFilename)
+    assert.Nil(t, err)
+}
+
+func TestDeleteRequestFails(t *testing.T) {
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        bodyReader := strings.NewReader("{\"code\":\"PermissionDenied\",\"message\":\"Cannot delete\"}")
+
+        response := http.Response{
+            StatusCode: 403,
+            Body: ioutil.NopCloser(bodyReader),
+        }
+
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+
+    err := api.DeleteFile(RemoteTestFilename)
+    assert.Equal(t, "Blobstore Delete Failed (403): {\"code\":\"PermissionDenied\",\"message\":\"Cannot delete\"}", err.Error())
 }

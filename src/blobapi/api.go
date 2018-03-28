@@ -56,6 +56,8 @@ type IBlobStoreApiClient interface {
     AppendFile(path string, source string) error
 
     ListPrefix(prefix string, recursive bool) ([]string, error)
+
+    DeleteFile(path string) error
 }
 
 
@@ -327,4 +329,30 @@ func (b *BlobStoreApiClient) ListPrefix(prefix string, recursive bool) ([]string
     }
 
     return paths, nil
+}
+
+func (b *BlobStoreApiClient) DeleteFile(path string) error {
+    request, err := http.NewRequest("DELETE", b.route(path), nil)
+    if err != nil {
+        return err
+    }
+
+    request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
+    request.Header.Add("X-BlobStore-Write-Acl", b.DefaultWriteAcl)
+
+    response, err := b.http.Do(request)
+    if err != nil {
+        return err
+    }
+
+    if response.StatusCode != 200 {
+        body, err := ioutil.ReadAll(response.Body)
+        if err != nil {
+           return err
+        }
+
+        return errors.New(fmt.Sprintf("Blobstore Delete Failed (%d): %s", response.StatusCode, string(body)))
+    }
+
+    return nil
 }
