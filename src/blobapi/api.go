@@ -10,6 +10,7 @@ import (
     "net/http"
     "net/url"
     "os"
+    "path/filepath"
     "strings"
     "time"
 )
@@ -188,6 +189,12 @@ func (b *BlobStoreApiClient) GetFileContents(path string) (string, error) {
 
 func (b *BlobStoreApiClient) DownloadFile(path, dest string) error {
     str, err := b.GetFileContents(path)
+    if err != nil {
+        return err
+    }
+
+    destDirectory := filepath.Dir(dest)
+    err = os.MkdirAll(destDirectory, 0755)
     if err != nil {
         return err
     }

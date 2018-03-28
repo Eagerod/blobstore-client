@@ -9,6 +9,7 @@ import (
     "net/http"
     "net/url"
     "os"
+    "path/filepath"
     "strings"
     "time"
     "testing"
@@ -229,6 +230,7 @@ func TestDownloadRequest(t *testing.T) {
 
     api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
     tempFile, err := ioutil.TempFile("", "")
+    defer os.Remove(tempFile.Name())
     assert.Nil(t, err)
     tempFile.Close()
 
@@ -236,6 +238,54 @@ func TestDownloadRequest(t *testing.T) {
     assert.Nil(t, err)
 
     tempFile, err = os.Open(tempFile.Name())
+    assert.Nil(t, err)
+
+    body, err := ioutil.ReadAll(bufio.NewReader(tempFile))
+    assert.Nil(t, err)
+
+    file, err := os.Open(LocalTestFilePath)
+    assert.Nil(t, err)
+
+    expectedBody, err := ioutil.ReadAll(bufio.NewReader(file))
+    assert.Nil(t, err)
+
+    assert.Equal(t, expectedBody, body)
+}
+
+func TestDownloadRequestNonExistentDirectory(t *testing.T) {
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, RemoteTestDownloadHttpMethod, request.Method)
+        assert.Equal(t, RemoteTestFileUrl, request.URL.String())
+        assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+
+        file, err := os.Open(LocalTestFilePath)
+        assert.Nil(t, err)
+
+        bodyReader := bufio.NewReader(file)
+
+        response := http.Response{
+            StatusCode: 200,
+            Body: ioutil.NopCloser(bodyReader),
+        }
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+    tempDir, err := ioutil.TempDir("", "")
+    defer os.RemoveAll(tempDir)
+
+    assert.Nil(t, err)
+
+    tempFilePath := filepath.Join(tempDir, "nested_directory", "temp_file")
+    err = api.DownloadFile(RemoteTestFilename, tempFilePath)
+    assert.Nil(t, err)
+
+    tempFile, err := os.Open(tempFilePath)
     assert.Nil(t, err)
 
     body, err := ioutil.ReadAll(bufio.NewReader(tempFile))
