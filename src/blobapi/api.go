@@ -11,6 +11,7 @@ import (
     "net/url"
     "os"
     "path/filepath"
+    "strconv"
     "strings"
     "time"
 )
@@ -31,6 +32,13 @@ type BlobStoreApiClient struct {
     http IHttpClient
 }
 
+type BlobFileStat struct {
+    Path string
+    Name string
+    MimeType string
+    SizeBytes int
+    Exists bool
+}
 
 type IBlobStoreApiClient interface {
     UploadStream(path string, stream *bufio.Reader, contentType string) error
@@ -40,6 +48,8 @@ type IBlobStoreApiClient interface {
     GetFileContents(path string) (string, error)
     DownloadFile(path string, dest string) error
     CatFile(path string) error
+
+    StatFile(path string) (*BlobFileStat, error)
 
     AppendStream(path string, stream *bufio.Reader) error
     AppendString(path string, value string) error
@@ -211,6 +221,46 @@ func (b *BlobStoreApiClient) CatFile(path string) error {
 
     fmt.Println(str)
     return nil
+}
+
+func (b *BlobStoreApiClient) StatFile(path string) (*BlobFileStat, error) {
+    request, err := http.NewRequest("HEAD", b.route(path), nil)
+    if err != nil {
+        return nil, err
+    }
+
+    request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
+
+    response, err := b.http.Do(request)
+    if err != nil {
+        return nil, err
+    }
+
+    rv := BlobFileStat{
+        MimeType: response.Header.Get("Content-Type"),
+        Exists: true,
+    }
+    finalSlash := strings.LastIndex(path, "/")
+    if finalSlash == -1 {
+        rv.Path = ""
+        rv.Name = path
+    } else {
+        rv.Path = path[0:finalSlash]
+        rv.Name = path[finalSlash:]
+    }
+
+    size, err := strconv.Atoi(response.Header.Get("Content-Length"))
+    if err == nil {
+        rv.SizeBytes = size
+    }
+
+    if response.StatusCode == 404 {
+        rv.Exists = false
+    } else if response.StatusCode != 200 {
+        return nil, errors.New(fmt.Sprintf("Blobstore Stat Failed (%d)", response.StatusCode))
+    }
+
+    return &rv, nil
 }
 
 func (b *BlobStoreApiClient) AppendStream(path string, stream *bufio.Reader) error {

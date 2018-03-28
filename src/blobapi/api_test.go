@@ -58,6 +58,7 @@ const (
     RemoteTestWriteSecret = "write secret"
     RemoteTestUploadHttpMethod = "POST"
     RemoteTestDownloadHttpMethod = "GET"
+    RemoteTestStatHttpMethod = "HEAD"
     RemoteTestListDirHttpMethod = "GET"
 )
 
@@ -320,6 +321,86 @@ func TestDownloadRequestFails(t *testing.T) {
 
     err = api.DownloadFile(RemoteTestFilename, tempFile.Name())
     assert.Equal(t, "Blobstore Download Failed (404): {\"code\":\"NotFound\",\"message\":\"File not found\"}", err.Error())
+}
+
+func TestStatRequest(t *testing.T) {
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, RemoteTestStatHttpMethod, request.Method)
+        assert.Equal(t, RemoteTestFileUrl, request.URL.String())
+        assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+
+        response := http.Response{
+            StatusCode: 200,
+        }
+        
+        response.Header = make(map[string][]string)
+        response.Header.Set("Content-Type", RemoteTestFileManualMimeType)
+        response.Header.Set("Content-Length", "1024")
+
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+
+    fileStat, err := api.StatFile(RemoteTestFilename)
+    assert.Nil(t, err)
+
+    assert.Equal(t, fileStat.Path, "")
+    assert.Equal(t, fileStat.Name, RemoteTestFilename)
+    assert.Equal(t, fileStat.MimeType, RemoteTestFileManualMimeType)
+    assert.Equal(t, fileStat.SizeBytes, 1024)
+    assert.Equal(t, fileStat.Exists, true)
+}
+
+func TestStatRequestDoesntExist(t *testing.T) {
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        request := params[0].(*http.Request)
+
+        assert.Equal(t, RemoteTestStatHttpMethod, request.Method)
+        assert.Equal(t, RemoteTestFileUrl, request.URL.String())
+        assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
+        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+
+        response := http.Response{
+            StatusCode: 404,
+        }
+        
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+
+    fileStat, err := api.StatFile(RemoteTestFilename)
+    assert.Nil(t, err)
+
+    assert.Equal(t, fileStat.Path, "")
+    assert.Equal(t, fileStat.Name, RemoteTestFilename)
+    assert.Equal(t, fileStat.MimeType, "")
+    assert.Equal(t, fileStat.SizeBytes, 0)
+    assert.Equal(t, fileStat.Exists, false)
+}
+
+func TestStatRequestFails(t *testing.T) {
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+
+    httpMock := func(params ...interface{}) (*http.Response, error) {
+        response := http.Response{
+            StatusCode: 403,
+        }
+        return &response, nil
+    }
+
+    api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+    fileStat, err := api.StatFile(RemoteTestFilename)
+    assert.Equal(t, "Blobstore Stat Failed (403)", err.Error())
+    assert.Nil(t, fileStat)
 }
 
 // Append functions are a bit more difficult to test, because they need to mock
