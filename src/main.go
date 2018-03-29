@@ -35,22 +35,11 @@ func newBlobParsedArg(arg string) *blobParsedArg {
     return &rv
 }
 
-var emptyAcl string = ""
-var readAcl *string = &emptyAcl
-var writeAcl *string = &emptyAcl
-
-func init() {    
-    if acl, ok := os.LookupEnv(BlobStoreReadAclEnvironmentVariable); ok {
-        readAcl = &acl
-    }
-
-    if acl, ok := os.LookupEnv(BlobStoreWriteAclEnvironmentVariable); ok {
-        writeAcl = &acl
-    }
-}
-
 func main() {
-    var b blobapi.IBlobStoreApiClient = blobapi.NewBlobStoreApiClient(BlobStoreDefaultUrlBase, *readAcl, *writeAcl)
+    var b blobapi.IBlobStoreApiClient = blobapi.NewBlobStoreApiClient(
+        BlobStoreDefaultUrlBase, 
+        blobapi.DefaultCredentialProviderChain(),
+    )
 
     var contentType string
     var appendString string
