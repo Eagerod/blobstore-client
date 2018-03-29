@@ -1,8 +1,8 @@
 package blobapi;
 
 import (
-    // "fmt"
     "net/http"
+    "net/textproto"
     "os"
 )
 
@@ -25,12 +25,12 @@ type ICredentialProvider interface {
 }
 
 func HasReadAclHeader(request *http.Request) bool {
-    _, ok := request.Header[HttpRequestReadAclHeader]
+    _, ok := request.Header[textproto.CanonicalMIMEHeaderKey(HttpRequestReadAclHeader)]
     return ok
 }
 
 func HasWriteAclHeader(request *http.Request) bool {
-    _, ok := request.Header[HttpRequestWriteAclHeader]
+    _, ok := request.Header[textproto.CanonicalMIMEHeaderKey(HttpRequestWriteAclHeader)]
     return ok
 }
 
@@ -42,7 +42,7 @@ func DefaultCredentialProviderChain() *CredentialProviderChain {
     defaultPc = new(CredentialProviderChain)
 
     defaultPc.providers = append(defaultPc.providers,
-        &EvironmentCredentialProvider{
+        &EnvironmentCredentialProvider{
             DefaultBlobStoreReadAclEnvironmentVariable,
             DefaultBlobStoreWriteAclEnvironmentVariable,
         },
@@ -57,7 +57,6 @@ func (cpc *CredentialProviderChain) AuthorizeRequest(request *http.Request) erro
             return err
         }
         if HasReadAclHeader(request) && HasWriteAclHeader(request) {
-            panic("no")
             return nil
         }
     }
@@ -81,12 +80,12 @@ func (dcp *DirectCredentialProvider) AuthorizeRequest(request *http.Request) err
     return nil
 }
 
-type EvironmentCredentialProvider struct {
+type EnvironmentCredentialProvider struct {
     ReadAclEnvironmentVariable string
     WriteAclEnvironmentVariable string
 }
 
-func (ecp *EvironmentCredentialProvider) AuthorizeRequest(request *http.Request) error {
+func (ecp *EnvironmentCredentialProvider) AuthorizeRequest(request *http.Request) error {
     if !HasReadAclHeader(request) {
         if acl, ok := os.LookupEnv(ecp.ReadAclEnvironmentVariable); ok {
             request.Header.Add(HttpRequestReadAclHeader, acl)
