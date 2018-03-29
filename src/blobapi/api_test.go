@@ -66,11 +66,11 @@ const (
 )
 
 func TestCreation(t *testing.T) {
-    var api *BlobStoreApiClient = NewBlobStoreApiClient("a", "b", "c")
+    var api *BlobStoreApiClient = NewBlobStoreApiClient("a", &DirectCredentialProvider{"b", "c"})
 
     assert.Equal(t, "a/", api.DefaultUrl)
-    assert.Equal(t, "b", api.DefaultReadAcl)
-    assert.Equal(t, "c", api.DefaultWriteAcl)
+    assert.Equal(t, "b", api.CredentialProvider.(*DirectCredentialProvider).ReadAcl)
+    assert.Equal(t, "c", api.CredentialProvider.(*DirectCredentialProvider).WriteAcl)
 
     httpClient := api.http.(*http.Client)
     assert.Equal(t,  time.Second * 30, httpClient.Timeout)
@@ -93,7 +93,7 @@ func TestRoute(t *testing.T) {
     }
 
     for _, ti := range resolutions {
-        api := NewBlobStoreApiClient(ti.BaseUrl, "", "")
+        api := NewBlobStoreApiClient(ti.BaseUrl, nil)
 
         assert.Equal(t, ti.FinalUrl, api.route(ti.PathComponent))
     }
@@ -108,7 +108,7 @@ func TestRoute(t *testing.T) {
     }
 
     for _, ti := range panics {
-        api := NewBlobStoreApiClient(ti.BaseUrl, "", "")
+        api := NewBlobStoreApiClient(ti.BaseUrl, nil)
         func () {
             defer func() {
                 r := recover()
@@ -124,7 +124,7 @@ func TestRoute(t *testing.T) {
 }
 
 func TestUploadRequest(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         request := params[0].(*http.Request)
@@ -158,7 +158,7 @@ func TestUploadRequest(t *testing.T) {
 }
 
 func TestUploadRequestNoContentType(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         request := params[0].(*http.Request)
@@ -192,7 +192,7 @@ func TestUploadRequestNoContentType(t *testing.T) {
 }
 
 func TestUploadRequestFails(t *testing.T) {
-     api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         bodyReader := strings.NewReader("{\"code\":\"NotFound\",\"message\":\"File not found\"}")
@@ -210,7 +210,7 @@ func TestUploadRequestFails(t *testing.T) {
 }
 
 func TestDownloadRequest(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         request := params[0].(*http.Request)
@@ -218,7 +218,7 @@ func TestDownloadRequest(t *testing.T) {
         assert.Equal(t, RemoteTestDownloadHttpMethod, request.Method)
         assert.Equal(t, RemoteTestFileUrl, request.URL.String())
         assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
-        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+        assert.Equal(t, RemoteTestWriteSecret, request.Header.Get("X-BlobStore-Write-Acl"))
 
         file, err := os.Open(LocalTestFilePath)
         assert.Nil(t, err)
@@ -257,7 +257,7 @@ func TestDownloadRequest(t *testing.T) {
 }
 
 func TestDownloadRequestNonExistentDirectory(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         request := params[0].(*http.Request)
@@ -265,7 +265,7 @@ func TestDownloadRequestNonExistentDirectory(t *testing.T) {
         assert.Equal(t, RemoteTestDownloadHttpMethod, request.Method)
         assert.Equal(t, RemoteTestFileUrl, request.URL.String())
         assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
-        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+        assert.Equal(t, RemoteTestWriteSecret, request.Header.Get("X-BlobStore-Write-Acl"))
 
         file, err := os.Open(LocalTestFilePath)
         assert.Nil(t, err)
@@ -305,7 +305,7 @@ func TestDownloadRequestNonExistentDirectory(t *testing.T) {
 }
 
 func TestDownloadRequestFails(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         bodyReader := strings.NewReader("{\"code\":\"NotFound\",\"message\":\"File not found\"}")
@@ -327,7 +327,7 @@ func TestDownloadRequestFails(t *testing.T) {
 }
 
 func TestStatRequest(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         request := params[0].(*http.Request)
@@ -335,7 +335,7 @@ func TestStatRequest(t *testing.T) {
         assert.Equal(t, RemoteTestStatHttpMethod, request.Method)
         assert.Equal(t, RemoteTestFileUrl, request.URL.String())
         assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
-        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+        assert.Equal(t, RemoteTestWriteSecret, request.Header.Get("X-BlobStore-Write-Acl"))
 
         response := http.Response{
             StatusCode: 200,
@@ -361,7 +361,7 @@ func TestStatRequest(t *testing.T) {
 }
 
 func TestStatRequestLongerFilename(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         request := params[0].(*http.Request)
@@ -369,7 +369,7 @@ func TestStatRequestLongerFilename(t *testing.T) {
         assert.Equal(t, RemoteTestStatHttpMethod, request.Method)
         assert.Equal(t, RemoteTestDeepFileUrl, request.URL.String())
         assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
-        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+        assert.Equal(t, RemoteTestWriteSecret, request.Header.Get("X-BlobStore-Write-Acl"))
 
         response := http.Response{
             StatusCode: 200,
@@ -395,7 +395,7 @@ func TestStatRequestLongerFilename(t *testing.T) {
 }
 
 func TestStatRequestDoesntExist(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         request := params[0].(*http.Request)
@@ -403,7 +403,7 @@ func TestStatRequestDoesntExist(t *testing.T) {
         assert.Equal(t, RemoteTestStatHttpMethod, request.Method)
         assert.Equal(t, RemoteTestFileUrl, request.URL.String())
         assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
-        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+        assert.Equal(t, RemoteTestWriteSecret, request.Header.Get("X-BlobStore-Write-Acl"))
 
         response := http.Response{
             StatusCode: 404,
@@ -425,7 +425,7 @@ func TestStatRequestDoesntExist(t *testing.T) {
 }
 
 func TestStatRequestFails(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         response := http.Response{
@@ -444,7 +444,7 @@ func TestStatRequestFails(t *testing.T) {
 // both a download and an upload function and return the appropriate responses
 // for both calls.
 func TestAppendStringRequest(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
     stringToAppend := "This is some text that should appear after the rest."
 
     getMock := func(params ...interface{}) (*http.Response, error) {
@@ -453,7 +453,7 @@ func TestAppendStringRequest(t *testing.T) {
         assert.Equal(t, RemoteTestDownloadHttpMethod, request.Method)
         assert.Equal(t, RemoteTestFileUrl, request.URL.String())
         assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
-        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+        assert.Equal(t, RemoteTestWriteSecret, request.Header.Get("X-BlobStore-Write-Acl"))
 
         file, err := os.Open(LocalTestFilePath)
         assert.Nil(t, err)
@@ -514,7 +514,7 @@ func TestAppendStringRequest(t *testing.T) {
 // both a download and an upload function and return the appropriate responses
 // for both calls.
 func TestAppendFileRequest(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     getMock := func(params ...interface{}) (*http.Response, error) {
         request := params[0].(*http.Request)
@@ -522,7 +522,7 @@ func TestAppendFileRequest(t *testing.T) {
         assert.Equal(t, RemoteTestDownloadHttpMethod, request.Method)
         assert.Equal(t, RemoteTestFileUrl, request.URL.String())
         assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
-        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+        assert.Equal(t, RemoteTestWriteSecret, request.Header.Get("X-BlobStore-Write-Acl"))
 
         file, err := os.Open(LocalTestFilePath)
         assert.Nil(t, err)
@@ -577,7 +577,7 @@ func TestAppendFileRequest(t *testing.T) {
 }
 
 func TestListRequest(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         request := params[0].(*http.Request)
@@ -585,7 +585,7 @@ func TestListRequest(t *testing.T) {
         assert.Equal(t, RemoteTestListDirHttpMethod, request.Method)
         assert.Equal(t, RemoteTestListDirUrl, request.URL.String())
         assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
-        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+        assert.Equal(t, RemoteTestWriteSecret, request.Header.Get("X-BlobStore-Write-Acl"))
 
         files := []string{"file-1", "file-2", "file-3"}
         filesBytes, err := json.Marshal(files)
@@ -606,7 +606,7 @@ func TestListRequest(t *testing.T) {
 }
 
 func TestListRequestRecursive(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         request := params[0].(*http.Request)
@@ -614,7 +614,7 @@ func TestListRequestRecursive(t *testing.T) {
         assert.Equal(t, RemoteTestListDirHttpMethod, request.Method)
         assert.Equal(t, RemoteTestListDirRecursiveUrl, request.URL.String())
         assert.Equal(t, RemoteTestReadSecret, request.Header.Get("X-BlobStore-Read-Acl"))
-        assert.Equal(t, "", request.Header.Get("X-BlobStore-Write-Acl"))
+        assert.Equal(t, RemoteTestWriteSecret, request.Header.Get("X-BlobStore-Write-Acl"))
 
         files := []string{"file-1", "file-2", "file-3"}
         filesBytes, err := json.Marshal(files)
@@ -635,7 +635,7 @@ func TestListRequestRecursive(t *testing.T) {
 }
 
 func TestListRequestFails(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         bodyReader := strings.NewReader("{\"code\":\"BigProblem\",\"message\":\"The code is broken\"}")
@@ -654,7 +654,7 @@ func TestListRequestFails(t *testing.T) {
 }
 
 func TestDeleteRequest(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         request := params[0].(*http.Request)
@@ -678,7 +678,7 @@ func TestDeleteRequest(t *testing.T) {
 }
 
 func TestDeleteRequestFails(t *testing.T) {
-    api := NewBlobStoreApiClient(RemoteTestBaseUrl, RemoteTestReadSecret, RemoteTestWriteSecret)
+    api := NewBlobStoreApiClient(RemoteTestBaseUrl, &DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
     httpMock := func(params ...interface{}) (*http.Response, error) {
         bodyReader := strings.NewReader("{\"code\":\"PermissionDenied\",\"message\":\"Cannot delete\"}")

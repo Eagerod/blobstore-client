@@ -1,6 +1,7 @@
 package blobapi;
 
 import (
+    // "fmt"
     "net/http"
     "os"
 )
@@ -45,6 +46,7 @@ func DefaultCredentialProviderChain() *CredentialProviderChain {
             DefaultBlobStoreReadAclEnvironmentVariable,
             DefaultBlobStoreWriteAclEnvironmentVariable,
         },
+        &DirectCredentialProvider{"", ""},
     )
     return defaultPc
 }
@@ -55,11 +57,27 @@ func (cpc *CredentialProviderChain) AuthorizeRequest(request *http.Request) erro
             return err
         }
         if HasReadAclHeader(request) && HasWriteAclHeader(request) {
+            panic("no")
             return nil
         }
     }
 
     // Maybe no authorization is desired.
+    return nil
+}
+
+type DirectCredentialProvider struct {
+    ReadAcl string
+    WriteAcl string
+}
+
+func (dcp *DirectCredentialProvider) AuthorizeRequest(request *http.Request) error {
+    if !HasReadAclHeader(request) {
+        request.Header.Add(HttpRequestReadAclHeader, dcp.ReadAcl)
+    }
+    if !HasWriteAclHeader(request) {
+        request.Header.Add(HttpRequestWriteAclHeader, dcp.WriteAcl)
+    }
     return nil
 }
 
