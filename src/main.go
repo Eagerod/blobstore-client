@@ -61,10 +61,6 @@ func main() {
         Use: "blob",
         Short: "Blobstore CLI",
         Long: "Download, upload or append data to the blobstore",
-        SilenceUsage: false,
-        Run: func(cmd *cobra.Command, args []string) {
-            cmd.Usage()
-        },
     }
 
     cpCommand := &cobra.Command{
