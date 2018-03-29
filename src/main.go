@@ -179,9 +179,9 @@ func main() {
     }
 
     cpCommand.Flags().StringVarP(&contentType, "type", "t", "", "Content type of uploaded file")
-    cpCommand.Flags().BoolVarP(&force, "force", "f", false, "Force the copy if the destination already exists")
     appendCommand.Flags().StringVarP(&appendString, "string", "s", "", "String to append")
     lsCommand.Flags().BoolVarP(&recursive, "recursive", "r", false, "List all files and folders recursively")
+    cpCommand.Flags().BoolVarP(&force, "force", "f", false, "Force the copy if the destination already exists")
 
     baseCommand.AddCommand(cpCommand)
     baseCommand.AddCommand(appendCommand)
