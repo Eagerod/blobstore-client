@@ -26,8 +26,7 @@ type IHttpClient interface {
 
 type BlobStoreApiClient struct {
     DefaultUrl string
-    DefaultReadAcl string
-    DefaultWriteAcl string
+    CredentialProvider ICredentialProvider
 
     http IHttpClient
 }
@@ -61,7 +60,7 @@ type IBlobStoreApiClient interface {
 }
 
 
-func NewBlobStoreApiClient(url, readAcl, writeAcl string) *BlobStoreApiClient {
+func NewBlobStoreApiClient(url string, credentialProvider ICredentialProvider) *BlobStoreApiClient {
     // Make sure that the base url looks like a path, so that url resolution
     // always uses the full base url as the prefix.
     if !strings.HasSuffix(url, "/") {
@@ -70,8 +69,7 @@ func NewBlobStoreApiClient(url, readAcl, writeAcl string) *BlobStoreApiClient {
 
     return &BlobStoreApiClient{
         url,
-        readAcl,
-        writeAcl,
+        credentialProvider,
         &http.Client{Timeout: time.Second * 30},
     }
 }
@@ -98,8 +96,18 @@ func (b *BlobStoreApiClient) route(path string) string {
     return baseUrlComponent.ResolveReference(pathUrlComponent).String()
 }
 
+func (b *BlobStoreApiClient) NewAuthorizedRequest(method, path string, body io.Reader) (*http.Request, error) {
+    request, err := http.NewRequest(method, b.route(path), body)
+    if err != nil {
+        return request, err
+    }
+
+    err = b.CredentialProvider.AuthorizeRequest(request)
+    return request, err
+}
+
 func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, contentType string) error {
-    request, err := http.NewRequest("POST", b.route(path), stream)
+    request, err := b.NewAuthorizedRequest("POST", path, stream)
     if err != nil {
         return err
     }
@@ -114,8 +122,6 @@ func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, con
     }
 
     request.Header.Add("Content-Type", contentType)
-    request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
-    request.Header.Add("X-BlobStore-Write-Acl", b.DefaultWriteAcl)
 
     response, err := b.http.Do(request)
     if err != nil {
@@ -150,12 +156,10 @@ type getFileReadStreamResponse struct {
 }
 
 func (b *BlobStoreApiClient) getFileReadStream(path string) (*getFileReadStreamResponse, error) {
-    request, err := http.NewRequest("GET", b.route(path), nil)
+    request, err := b.NewAuthorizedRequest("GET", path, nil)
     if err != nil {
         return nil, err
     }
-
-    request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
 
     response, err := b.http.Do(request)
     if err != nil {
@@ -226,12 +230,10 @@ func (b *BlobStoreApiClient) CatFile(path string) error {
 }
 
 func (b *BlobStoreApiClient) StatFile(path string) (*BlobFileStat, error) {
-    request, err := http.NewRequest("HEAD", b.route(path), nil)
+    request, err := b.NewAuthorizedRequest("HEAD", path, nil)
     if err != nil {
         return nil, err
     }
-
-    request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
 
     response, err := b.http.Do(request)
     if err != nil {
@@ -302,12 +304,10 @@ func (b *BlobStoreApiClient) ListPrefix(prefix string, recursive bool) ([]string
         requestUrl += "?recursive=true"
     }
 
-    request, err := http.NewRequest("GET", requestUrl, nil)
+    request, err := b.NewAuthorizedRequest("GET", requestUrl, nil)
     if err != nil {
         return paths, err
     }
-
-    request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
 
     response, err := b.http.Do(request)
     if err != nil {
@@ -332,13 +332,10 @@ func (b *BlobStoreApiClient) ListPrefix(prefix string, recursive bool) ([]string
 }
 
 func (b *BlobStoreApiClient) DeleteFile(path string) error {
-    request, err := http.NewRequest("DELETE", b.route(path), nil)
+    request, err := b.NewAuthorizedRequest("DELETE", path, nil)
     if err != nil {
         return err
     }
-
-    request.Header.Add("X-BlobStore-Read-Acl", b.DefaultReadAcl)
-    request.Header.Add("X-BlobStore-Write-Acl", b.DefaultWriteAcl)
 
     response, err := b.http.Do(request)
     if err != nil {
