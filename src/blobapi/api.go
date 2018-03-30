@@ -96,7 +96,7 @@ func (b *BlobStoreApiClient) route(path string) string {
     return baseUrlComponent.ResolveReference(pathUrlComponent).String()
 }
 
-func (b *BlobStoreApiClient) AuthorizedRequest(method, path string, body io.Reader) (*http.Request, error) {
+func (b *BlobStoreApiClient) NewAuthorizedRequest(method, path string, body io.Reader) (*http.Request, error) {
     request, err := http.NewRequest(method, b.route(path), body)
     if err != nil {
         return request, err
@@ -107,7 +107,7 @@ func (b *BlobStoreApiClient) AuthorizedRequest(method, path string, body io.Read
 }
 
 func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, contentType string) error {
-    request, err := b.AuthorizedRequest("POST", path, stream)
+    request, err := b.NewAuthorizedRequest("POST", path, stream)
     if err != nil {
         return err
     }
@@ -156,7 +156,7 @@ type getFileReadStreamResponse struct {
 }
 
 func (b *BlobStoreApiClient) getFileReadStream(path string) (*getFileReadStreamResponse, error) {
-    request, err := b.AuthorizedRequest("GET", path, nil)
+    request, err := b.NewAuthorizedRequest("GET", path, nil)
     if err != nil {
         return nil, err
     }
@@ -230,7 +230,7 @@ func (b *BlobStoreApiClient) CatFile(path string) error {
 }
 
 func (b *BlobStoreApiClient) StatFile(path string) (*BlobFileStat, error) {
-    request, err := b.AuthorizedRequest("HEAD", path, nil)
+    request, err := b.NewAuthorizedRequest("HEAD", path, nil)
     if err != nil {
         return nil, err
     }
@@ -304,7 +304,7 @@ func (b *BlobStoreApiClient) ListPrefix(prefix string, recursive bool) ([]string
         requestUrl += "?recursive=true"
     }
 
-    request, err := b.AuthorizedRequest("GET", requestUrl, nil)
+    request, err := b.NewAuthorizedRequest("GET", requestUrl, nil)
     if err != nil {
         return paths, err
     }
@@ -332,7 +332,7 @@ func (b *BlobStoreApiClient) ListPrefix(prefix string, recursive bool) ([]string
 }
 
 func (b *BlobStoreApiClient) DeleteFile(path string) error {
-    request, err := b.AuthorizedRequest("DELETE", path, nil)
+    request, err := b.NewAuthorizedRequest("DELETE", path, nil)
     if err != nil {
         return err
     }
