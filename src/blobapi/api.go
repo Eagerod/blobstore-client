@@ -74,6 +74,19 @@ func NewBlobStoreApiClient(url string, credentialProvider ICredentialProvider) *
     }
 }
 
+func NewBlobStoreHttpError(operation string, response *http.Response) error {
+    if response.Body == nil {
+        return errors.New(fmt.Sprintf("Blobstore %s Failed (%d)", operation, response.StatusCode))
+    }
+
+    body, err := ioutil.ReadAll(response.Body)
+    if err != nil {
+       return err
+    }
+
+    return errors.New(fmt.Sprintf("Blobstore %s Failed (%d): %s", operation, response.StatusCode, string(body)))
+}
+
 
 func (b *BlobStoreApiClient) route(path string) string {
     // Always remove a / prefix on `path`, since it will resolve itself down to
@@ -129,12 +142,7 @@ func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, con
     }
 
     if response.StatusCode != 200 {
-        body, err := ioutil.ReadAll(response.Body)
-        if err != nil {
-           return err
-        }
-
-        return errors.New(fmt.Sprintf("Blobstore Upload Failed (%d): %s", response.StatusCode, string(body)))
+        return NewBlobStoreHttpError("Upload", response)
     }
 
     return nil
@@ -169,12 +177,7 @@ func (b *BlobStoreApiClient) getFileReadStream(path string) (*getFileReadStreamR
     }
 
     if response.StatusCode != 200 {
-        bodyBytes, err := ioutil.ReadAll(response.Body)
-        if err != nil {
-            return nil, err
-        }
-
-        return nil, errors.New(fmt.Sprintf("Blobstore Download Failed (%d): %s", response.StatusCode, string(bodyBytes)))
+        return nil, NewBlobStoreHttpError("Download", response)
     }
 
     body := response.Body.(io.Reader)
@@ -263,7 +266,7 @@ func (b *BlobStoreApiClient) StatFile(path string) (*BlobFileStat, error) {
     if response.StatusCode == 404 {
         rv.Exists = false
     } else if response.StatusCode != 200 {
-        return nil, errors.New(fmt.Sprintf("Blobstore Stat Failed (%d)", response.StatusCode))
+        return nil, NewBlobStoreHttpError("Stat", response)
     }
 
     return &rv, nil
@@ -319,12 +322,7 @@ func (b *BlobStoreApiClient) ListPrefix(prefix string, recursive bool) ([]string
     }
 
     if response.StatusCode != 200 {
-        body, err := ioutil.ReadAll(response.Body)
-        if err != nil {
-            return paths, err
-        }
-
-        return paths, errors.New(fmt.Sprintf("Blobstore List Failed (%d): %s", response.StatusCode, string(body)))
+        return paths, NewBlobStoreHttpError("List", response)
     }
 
     err = json.NewDecoder(response.Body).Decode(&paths)
@@ -347,12 +345,7 @@ func (b *BlobStoreApiClient) DeleteFile(path string) error {
     }
 
     if response.StatusCode != 200 {
-        body, err := ioutil.ReadAll(response.Body)
-        if err != nil {
-           return err
-        }
-
-        return errors.New(fmt.Sprintf("Blobstore Delete Failed (%d): %s", response.StatusCode, string(body)))
+        return NewBlobStoreHttpError("Delete", response)
     }
 
     return nil
