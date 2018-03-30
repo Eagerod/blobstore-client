@@ -142,6 +142,8 @@ func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, con
 
 func (b *BlobStoreApiClient) UploadFile(path string, source string, contentType string) error {
     file, err := os.Open(source)
+    defer file.Close()
+
     if err != nil {
         return err
     }
@@ -284,6 +286,8 @@ func (b *BlobStoreApiClient) AppendString(path string, value string) error {
 
 func (b *BlobStoreApiClient) AppendFile(path string, source string) error {
     file, err := os.Open(source)
+    defer file.Close()
+
     if err != nil {
         return err
     }
