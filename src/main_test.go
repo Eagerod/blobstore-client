@@ -97,7 +97,7 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
     assert.Nil(t, err)
     assert.Equal(t, "", string(output))
 
-    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+    api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
     contents, err := api.GetFileContents(remoteMakefileRelPath)
     assert.Nil(t, err)
 
@@ -116,7 +116,7 @@ func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
     assert.Nil(t, err)
     assert.Equal(t, "", string(output))
 
-    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+    api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
     contents, err := api.GetFileContents(remoteMakefileRelPath)
     assert.Nil(t, err)
 
@@ -150,7 +150,7 @@ func TestCommandLineInterfaceUploadFails(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownload(t *testing.T) {
-    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+    api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
     api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
     cmd := exec.Command("blob", "cp", remoteMakefileCliPath, "../Makefile2")
@@ -175,7 +175,7 @@ func TestCommandLineInterfaceDownload(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
-    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+    api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
     api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
     cmd := exec.Command("blob", "cp", remoteMakefileCliPath)
@@ -217,7 +217,7 @@ func TestCommandLineInterfaceDownloadFails(t *testing.T) {
 }
 
 func TestCommandLineInterfaceAppend(t *testing.T) {
-    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+    api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
     api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
     cmd := exec.Command("blob", "append", remoteMakefileCliPath, "--string", "something extra")
@@ -251,7 +251,7 @@ func TestCommandLineInterfaceAppendFails(t *testing.T) {
 }
 
 func TestCommandLineInterfaceList(t *testing.T) {
-    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+    api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
     api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
     cmd := exec.Command("blob", "ls", "blob:/clientlib")
@@ -277,7 +277,7 @@ func TestCommandLineInterfaceList(t *testing.T) {
 }
 
 func TestCommandLineInterfaceListRecursive(t *testing.T) {
-    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+    api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
     api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
     cmd := exec.Command("blob", "ls", "blob:/clientlib", "-r")
@@ -303,7 +303,7 @@ func TestCommandLineInterfaceListRecursive(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDelete(t *testing.T) {
-    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+    api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
     api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
     cmd := exec.Command("blob", "rm", remoteMakefileCliPath)
@@ -324,7 +324,7 @@ func TestCommandLineInterfaceDelete(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDeleteFails(t *testing.T) {
-    api := blobapi.NewBlobStoreApiClient("https://aleem.haji.ca/blob", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+    api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
     api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
     cmd := exec.Command("blob", "rm", remoteMakefileCliPath)

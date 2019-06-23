@@ -17,7 +17,7 @@ import (
 
 const BlobStoreReadAclEnvironmentVariable = "BLOBSTORE_READ_ACL"
 const BlobStoreWriteAclEnvironmentVariable = "BLOBSTORE_WRITE_ACL"
-const BlobStoreDefaultUrlBase = "https://aleem.haji.ca/blob"
+const BlobStoreDefaultUrlBase = "https://blob.aleemhaji.com"
 
 type blobParsedArg struct {
     isRemote bool

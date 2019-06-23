@@ -102,12 +102,12 @@ build/installer.sh:
 
 .PHONY: release
 release: $(BIN_NAME) build/$(BLOB_LATEST_VERSION).zip build/installer.sh
-	if [ -z "$$BLOBSTORE_WRITE_ACL" ]; then \
+	source.env && if [ -z "$$BLOBSTORE_WRITE_ACL" ]; then \
 		echo >&2 "Write ACL not present in environment; aborting release."; \
 		exit -1; \
 	fi;
-	$(BIN_NAME) cp "build/$(BLOB_LATEST_VERSION).zip" "blob:/$(UPLOAD_PATH)/$(BLOB_LATEST_VERSION).zip"
-	$(BIN_NAME) cp -f "build/installer.sh" "blob:/$(UPLOAD_PATH)/installer.sh"
+	source .env && $(BIN_NAME) cp "build/$(BLOB_LATEST_VERSION).zip" "blob:/$(UPLOAD_PATH)/$(BLOB_LATEST_VERSION).zip"
+	source .env && $(BIN_NAME) cp -f "build/installer.sh" "blob:/$(UPLOAD_PATH)/installer.sh"
 
 .PHONY: clean
 clean:

@@ -12,7 +12,7 @@ fi
 DOWNLOAD_FILE=$(mktemp)
 UNZIP_DIR=$(mktemp -d)
 
-curl "https://aleem.haji.ca/blob/clientlib/$BLOB_LATEST_VERSION.zip" -o "$DOWNLOAD_FILE"
+curl "https://blob.aleemhaji.com/clientlib/$BLOB_LATEST_VERSION.zip" -o "$DOWNLOAD_FILE"
 unzip -o "$DOWNLOAD_FILE" -d "$UNZIP_DIR"
 cd "$UNZIP_DIR"
 make install
