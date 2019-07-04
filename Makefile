@@ -102,7 +102,7 @@ build/installer.sh:
 
 .PHONY: release
 release: $(BIN_NAME) build/$(BLOB_LATEST_VERSION).zip build/installer.sh
-	source.env && if [ -z "$$BLOBSTORE_WRITE_ACL" ]; then \
+	source .env && if [ -z "$$BLOBSTORE_WRITE_ACL" ]; then \
 		echo >&2 "Write ACL not present in environment; aborting release."; \
 		exit -1; \
 	fi;
