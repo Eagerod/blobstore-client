@@ -15,7 +15,7 @@ steps:
     image: golang:1.12
     commands:
       - make
-      - "curl -X POST -H \"X-Blobstore-Write-Acl: ${BLOBSTORE_WRITE_ACL}\" ${BLOBSTORE_URL}/${GOOS}-${GOARCH}/latest/blob"
+      - "curl -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary=@build/blob $${BLOBSTORE_URL}/$${GOOS}-$${GOARCH}/latest/blob"
     environment:
       GOOS: linux
       GOARCH: amd64
