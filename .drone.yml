@@ -3,6 +3,6 @@ name: default
 
 steps:
   - name: test
-    image: golang:10
+    image: golang:1.12
     commands:
       - make test
