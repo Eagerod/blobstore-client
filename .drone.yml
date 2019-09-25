@@ -6,3 +6,7 @@ steps:
     image: golang:1.12
     commands:
       - make test
+  - name: build
+    image: golang:1.12
+    commands:
+      - make
