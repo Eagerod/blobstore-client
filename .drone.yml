@@ -26,3 +26,19 @@ steps:
     # when:
     #   event:
     #     - tag
+
+  - name: publish-darwin-amd64-version
+    image: golang:1.12
+    commands:
+      - make
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob $${BLOBSTORE_URL}/$${GOOS}-$${GOARCH}/latest/blob"
+    environment:
+      GOOS: darwin
+      GOARCH: amd64
+      BLOBSTORE_URL:
+        from_secret: blobstore_url
+      BLOBSTORE_WRITE_ACL:
+        from_secret: blobstore_write_acl
+    # when:
+    #   event:
+    #     - tag
