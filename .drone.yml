@@ -1,3 +1,10 @@
+_:
+  - &blobstore_credentials
+    BLOBSTORE_URL: 
+      from_secret: blobstore_url
+    BLOBSTORE_WRITE_ACL:
+      from_secret: blobstore_write_acl
+
 kind: pipeline
 name: default
 
@@ -20,10 +27,7 @@ steps:
     environment:
       GOOS: linux
       GOARCH: amd64
-      BLOBSTORE_URL:
-        from_secret: blobstore_url
-      BLOBSTORE_WRITE_ACL:
-        from_secret: blobstore_write_acl
+      <<: *blobstore_credentials
     when:
       event:
         - tag
@@ -37,10 +41,21 @@ steps:
     environment:
       GOOS: darwin
       GOARCH: amd64
-      BLOBSTORE_URL:
-        from_secret: blobstore_url
-      BLOBSTORE_WRITE_ACL:
-        from_secret: blobstore_write_acl
-    when:
+      <<: *blobstore_credentials
+   when:
       event:
         - tag
+
+  - name: publish-internal-version
+    image: golang:1.12
+    commands:
+      - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "http://192.168.200.71"_' src/main.go
+      - make
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob $${BLOBSTORE_URL}/$${GOOS}-$${GOARCH}/latest-internal/blob"
+    environment:
+      GOOS: linux
+      GOARCH: amd64
+      <<: *blobstore_credentials
+    when:
+      branch: 
+        - master
