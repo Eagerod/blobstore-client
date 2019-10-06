@@ -42,7 +42,7 @@ steps:
       GOOS: darwin
       GOARCH: amd64
       <<: *blobstore_credentials
-   when:
+    when:
       event:
         - tag
 
