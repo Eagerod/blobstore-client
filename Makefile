@@ -115,3 +115,7 @@ clean:
 	rm -rf build || true
 	rm -rf $(DEPS_DIR) || true
 	rm $(BIN_NAME) || true
+
+.PHONY: fmt
+fmt:
+	$(PREFIX) go fmt ./src ./src/blobapi
