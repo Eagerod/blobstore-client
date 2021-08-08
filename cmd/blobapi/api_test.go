@@ -107,8 +107,8 @@ func TestRoute(t *testing.T) {
 		PathComponent string
 		PanicMessage  string
 	}{
-		{":broken", "", "parse :broken/: missing protocol scheme"},
-		{"https://example.org", ":broken", "parse :broken: missing protocol scheme"},
+		{":broken", "", "parse \":broken/\": missing protocol scheme"},
+		{"https://example.org", ":broken", "parse \":broken\": missing protocol scheme"},
 	}
 
 	for _, ti := range panics {

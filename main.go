@@ -12,12 +12,12 @@ import (
 )
 
 import (
-	"blobapi"
+	"gitea.internal.aleemhaji.com/aleem/blobapi/cmd/blobapi"
 )
 
 const BlobStoreReadAclEnvironmentVariable = "BLOBSTORE_READ_ACL"
 const BlobStoreWriteAclEnvironmentVariable = "BLOBSTORE_WRITE_ACL"
-const BlobStoreDefaultUrlBase = "https://blob.aleemhaji.com"
+const BlobStoreDefaultUrlBase = "https://blob.internal.aleemhaji.com"
 
 type blobParsedArg struct {
 	isRemote bool

@@ -14,7 +14,7 @@ import (
 )
 
 import (
-	"blobapi"
+	"gitea.internal.aleemhaji.com/aleem/blobapi/cmd/blobapi"
 )
 
 // NOTE: This package expects a fresh binary to have just been installed on the
@@ -22,9 +22,11 @@ import (
 // the project's build directory if possible, but that may be more difficult
 // than needed.
 const testingAccessToken string = "ad4c3f2d4fb81f4118f837464b961eebda026d8c52a7cc967047cc3c2a3f6a43"
-const makefilePath string = "../Makefile"
+const makefilePath string = "Makefile"
 const remoteMakefileCliPath string = "blob:/clientlib/testing/Makefile"
 const remoteMakefileRelPath string = "clientlib/testing/Makefile"
+const blobBinPath string = "./build/blob"
+const blobstoreBaseUrl string = "https://blob.internal.aleemhaji.com"
 
 var commands []string = make([]string, 0, 0)
 var blobCliHelpStrings map[string]string = make(map[string]string, 0)
@@ -46,7 +48,7 @@ func makeEnv(withToken string) []string {
 }
 
 func TestMain(m *testing.M) {
-	if _, err := exec.LookPath("blob"); err != nil {
+	if _, err := exec.LookPath(blobBinPath); err != nil {
 		panic("Failed to find executable to run system tests")
 	}
 
@@ -54,7 +56,7 @@ func TestMain(m *testing.M) {
 
 	for i := range commands {
 		command := commands[i]
-		cmd := exec.Command("blob", command, "-h")
+		cmd := exec.Command(blobBinPath, command, "-h")
 
 		str, err := cmd.CombinedOutput()
 		if err != nil {
@@ -86,7 +88,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCommandLineInterfaceUpload(t *testing.T) {
-	cmd := exec.Command("blob", "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain", "--force")
+	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain", "--force")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -97,7 +99,7 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "", string(output))
 
-	api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	contents, err := api.GetFileContents(remoteMakefileRelPath)
 	assert.Nil(t, err)
 
@@ -105,7 +107,7 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
 }
 
 func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
-	cmd := exec.Command("blob", "cp", makefilePath, remoteMakefileCliPath, "--force")
+	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteMakefileCliPath, "--force")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -116,7 +118,7 @@ func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "", string(output))
 
-	api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	contents, err := api.GetFileContents(remoteMakefileRelPath)
 	assert.Nil(t, err)
 
@@ -124,7 +126,7 @@ func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
 }
 
 func TestCommandLineInterfaceUploadAlreadyExists(t *testing.T) {
-	cmd := exec.Command("blob", "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain")
+	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -137,7 +139,7 @@ func TestCommandLineInterfaceUploadAlreadyExists(t *testing.T) {
 }
 
 func TestCommandLineInterfaceUploadFails(t *testing.T) {
-	cmd := exec.Command("blob", "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain", "--force")
+	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain", "--force")
 	cmd.Env = makeEnv("")
 
 	output, err := cmd.CombinedOutput()
@@ -150,10 +152,10 @@ func TestCommandLineInterfaceUploadFails(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownload(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
-	cmd := exec.Command("blob", "cp", remoteMakefileCliPath, "../Makefile2")
+	cmd := exec.Command(blobBinPath, "cp", remoteMakefileCliPath, "../Makefile2")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -175,10 +177,10 @@ func TestCommandLineInterfaceDownload(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
-	cmd := exec.Command("blob", "cp", remoteMakefileCliPath)
+	cmd := exec.Command(blobBinPath, "cp", remoteMakefileCliPath)
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -191,7 +193,7 @@ func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownloadFileAlreadyExists(t *testing.T) {
-	cmd := exec.Command("blob", "cp", remoteMakefileCliPath, makefilePath)
+	cmd := exec.Command(blobBinPath, "cp", remoteMakefileCliPath, makefilePath)
 	cmd.Env = makeEnv("")
 
 	output, err := cmd.CombinedOutput()
@@ -204,7 +206,7 @@ func TestCommandLineInterfaceDownloadFileAlreadyExists(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownloadFails(t *testing.T) {
-	cmd := exec.Command("blob", "cp", remoteMakefileCliPath, "../Makefile2")
+	cmd := exec.Command(blobBinPath, "cp", remoteMakefileCliPath, "../Makefile2")
 	cmd.Env = makeEnv("")
 
 	output, err := cmd.CombinedOutput()
@@ -217,10 +219,10 @@ func TestCommandLineInterfaceDownloadFails(t *testing.T) {
 }
 
 func TestCommandLineInterfaceAppend(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
-	cmd := exec.Command("blob", "append", remoteMakefileCliPath, "--string", "something extra")
+	cmd := exec.Command(blobBinPath, "append", remoteMakefileCliPath, "--string", "something extra")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -238,7 +240,7 @@ func TestCommandLineInterfaceAppend(t *testing.T) {
 }
 
 func TestCommandLineInterfaceAppendFails(t *testing.T) {
-	cmd := exec.Command("blob", "append", remoteMakefileCliPath, "--string", "something extra")
+	cmd := exec.Command(blobBinPath, "append", remoteMakefileCliPath, "--string", "something extra")
 	cmd.Env = makeEnv("")
 
 	output, err := cmd.CombinedOutput()
@@ -251,10 +253,10 @@ func TestCommandLineInterfaceAppendFails(t *testing.T) {
 }
 
 func TestCommandLineInterfaceList(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
-	cmd := exec.Command("blob", "ls", "blob:/clientlib")
+	cmd := exec.Command(blobBinPath, "ls", "blob:/clientlib")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -277,10 +279,10 @@ func TestCommandLineInterfaceList(t *testing.T) {
 }
 
 func TestCommandLineInterfaceListRecursive(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
-	cmd := exec.Command("blob", "ls", "blob:/clientlib", "-r")
+	cmd := exec.Command(blobBinPath, "ls", "blob:/clientlib", "-r")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -303,10 +305,10 @@ func TestCommandLineInterfaceListRecursive(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDelete(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
-	cmd := exec.Command("blob", "rm", remoteMakefileCliPath)
+	cmd := exec.Command(blobBinPath, "rm", remoteMakefileCliPath)
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -324,10 +326,10 @@ func TestCommandLineInterfaceDelete(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDeleteFails(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient("https://blob.aleemhaji.com", &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
 
-	cmd := exec.Command("blob", "rm", remoteMakefileCliPath)
+	cmd := exec.Command(blobBinPath, "rm", remoteMakefileCliPath)
 	cmd.Env = makeEnv("")
 
 	output, err := cmd.CombinedOutput()
