@@ -1,2 +1,0 @@
-github.com/spf13/cobra@a1f051bc3eba734da4772d60e2d677f47cf93ef4
-github.com/spf13/pflag@ee5fd03fd6acfd43e44aea0b4135958546ed8e73

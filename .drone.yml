@@ -10,16 +10,16 @@ name: default
 
 steps:
   - name: test
-    image: golang:1.12
+    image: golang:1.16
     commands:
       - make test
   - name: build
-    image: golang:1.12
+    image: golang:1.16
     commands:
       - make
 
   - name: publish-linux-amd64-version
-    image: golang:1.12
+    image: golang:1.16
     commands:
       - make
       - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob $${BLOBSTORE_URL}/$${GOOS}-$${GOARCH}/latest/blob"
@@ -33,7 +33,7 @@ steps:
         - tag
 
   - name: publish-darwin-amd64-version
-    image: golang:1.12
+    image: golang:1.16
     commands:
       - make
       - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob $${BLOBSTORE_URL}/$${GOOS}-$${GOARCH}/latest/blob"
@@ -47,7 +47,7 @@ steps:
         - tag
 
   - name: publish-internal-version
-    image: golang:1.12
+    image: golang:1.16
     commands:
       - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "http://192.168.200.71"_' src/main.go
       - make

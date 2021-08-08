@@ -39,6 +39,7 @@ publish/wp-linux-amd64:
 	mkdir -p $$(dirname "$@")
 	mv $(BIN_NAME) $@
 
+
 .PHONY: publish/wp-darwin-amd64
 publish/wp-darwin-amd64:
 	# Force build; don't let existing versions interfere.
