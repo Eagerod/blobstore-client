@@ -1,4 +1,4 @@
-FROM golang:1.15 AS builder
+FROM golang:1.16 AS builder
 
 WORKDIR /app
 
@@ -12,6 +12,20 @@ RUN go mod download
 COPY . .
 
 RUN make test && make
+
+
+FROM builder AS publisher
+
+RUN \
+    apt-get update && \
+    apt-get install -y \
+        build-essential && \
+    apt-get clean
+
+RUN mkdir publish
+RUN rm -rf /tmp/go-link* && make clean && GOOS=darwin GOARCH=arm64 make build/blob && mv build/blob publish/darwin-arm64
+RUN rm -rf /tmp/go-link* && make clean && GOOS=linux GOARCH=amd64 make build/blob && mv build/blob publish/linux-amd64
+RUN rm -rf /tmp/go-link* && make clean && GOOS=darwin GOARCH=amd64 make build/blob && mv build/blob publish/darwin-amd64
 
 
 FROM debian:10 AS runner
