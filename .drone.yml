@@ -6,6 +6,7 @@ _:
       from_secret: blobstore_write_acl
 
 kind: pipeline
+type: kubernetes
 name: default
 
 steps:
