@@ -23,12 +23,12 @@ steps:
     image: golang:1.16
     commands:
       - make publish
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-linux-amd64 ${BLOBSTORE_URL}/linux-amd64/latest/blob"
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-linux-amd64 ${BLOBSTORE_URL}/linux-amd64/${DRONE_TAG}/blob"
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-amd64 ${BLOBSTORE_URL}/darwin-amd64/latest/blob"
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-amd64 ${BLOBSTORE_URL}/darwin-amd64/${DRONE_TAG}/blob"
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-arm64 ${BLOBSTORE_URL}/darwin-arm64/latest/blob"
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-arm64 ${BLOBSTORE_URL}/darwin-arm64/${DRONE_TAG}/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-linux-amd64 https://blob.internal.aleemhaji.com/linux-amd64/latest/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-linux-amd64 https://blob.internal.aleemhaji.com/linux-amd64/${DRONE_TAG}/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-amd64 https://blob.internal.aleemhaji.com/darwin-amd64/latest/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-amd64 https://blob.internal.aleemhaji.com/darwin-amd64/${DRONE_TAG}/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-arm64 https://blob.internal.aleemhaji.com/darwin-arm64/latest/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-arm64 https://blob.internal.aleemhaji.com/darwin-arm64/${DRONE_TAG}/blob"
     environment:
       <<: *blobstore_credentials
     when:
@@ -40,9 +40,9 @@ steps:
     commands:
       - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "https://blob.internal.aleemhaji.com"_' main.go
       - make publish
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-linux-amd64 ${BLOBSTORE_URL}/linux-amd64/latest-internal/blob"
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-amd64 ${BLOBSTORE_URL}/darwin-amd64/latest-internal/blob"
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-arm64 ${BLOBSTORE_URL}/darwin-arm64/latest-internal/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-linux-amd64 https://blob.internal.aleemhaji.com/linux-amd64/latest-internal/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-amd64 https://blob.internal.aleemhaji.com/darwin-amd64/latest-internal/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-arm64 https://blob.internal.aleemhaji.com/darwin-arm64/latest-internal/blob"
     environment:
       <<: *blobstore_credentials
     when:
