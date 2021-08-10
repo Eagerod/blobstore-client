@@ -2,14 +2,17 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"testing"
 )
 
 import (
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,8 +26,6 @@ import (
 // than needed.
 const testingAccessToken string = "ad4c3f2d4fb81f4118f837464b961eebda026d8c52a7cc967047cc3c2a3f6a43"
 const makefilePath string = "Makefile"
-const remoteMakefileCliPath string = "blob:/clientlib/testing/Makefile"
-const remoteMakefileRelPath string = "clientlib/testing/Makefile"
 const blobBinPath string = "./build/blob"
 const blobstoreBaseUrl string = "https://blob.internal.aleemhaji.com"
 
@@ -45,6 +46,15 @@ func makeEnv(withToken string) []string {
 	copyEnv = append(copyEnv, "BLOBSTORE_READ_ACL="+withToken, "BLOBSTORE_WRITE_ACL="+withToken)
 
 	return copyEnv
+}
+
+func getTestFilePath() string {
+	suffix := uuid.New().String()
+	return path.Join("clientlib", "testing", suffix)
+}
+
+func getTestFileCliPath(base string) string {
+	return path.Join("blob:", base)
 }
 
 func TestMain(m *testing.M) {
@@ -88,7 +98,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestCommandLineInterfaceUpload(t *testing.T) {
-	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain", "--force")
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
+
+	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteCliPath, "--type", "text/plain", "--force")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -100,14 +113,18 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
 	assert.Equal(t, "", string(output))
 
 	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	contents, err := api.GetFileContents(remoteMakefileRelPath)
+	contents, err := api.GetFileContents(remotePath)
 	assert.Nil(t, err)
+	defer api.DeleteFile(remotePath)
 
 	assert.Equal(t, string(*makefileBytes), contents)
 }
 
 func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
-	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteMakefileCliPath, "--force")
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
+
+	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteCliPath, "--force")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -119,14 +136,23 @@ func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
 	assert.Equal(t, "", string(output))
 
 	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	contents, err := api.GetFileContents(remoteMakefileRelPath)
+	contents, err := api.GetFileContents(remotePath)
 	assert.Nil(t, err)
+	defer api.DeleteFile(remotePath)
 
 	assert.Equal(t, string(*makefileBytes), contents)
 }
 
 func TestCommandLineInterfaceUploadAlreadyExists(t *testing.T) {
-	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain")
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
+
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	err := api.UploadFile(remotePath, makefilePath, "text/plain")
+	assert.Nil(t, err)
+	defer api.DeleteFile(remotePath)
+
+	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteCliPath, "--type", "text/plain")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -139,7 +165,15 @@ func TestCommandLineInterfaceUploadAlreadyExists(t *testing.T) {
 }
 
 func TestCommandLineInterfaceUploadFails(t *testing.T) {
-	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteMakefileCliPath, "--type", "text/plain", "--force")
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
+
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	err := api.UploadFile(remotePath, makefilePath, "text/plain")
+	assert.Nil(t, err)
+	defer api.DeleteFile(remotePath)
+
+	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteCliPath, "--type", "text/plain", "--force")
 	cmd.Env = makeEnv("")
 
 	output, err := cmd.CombinedOutput()
@@ -152,10 +186,13 @@ func TestCommandLineInterfaceUploadFails(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownload(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
 
-	cmd := exec.Command(blobBinPath, "cp", remoteMakefileCliPath, "../Makefile2")
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api.UploadFile(remotePath, makefilePath, "text/plain")
+
+	cmd := exec.Command(blobBinPath, "cp", remoteCliPath, "../Makefile2")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -177,10 +214,13 @@ func TestCommandLineInterfaceDownload(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
 
-	cmd := exec.Command(blobBinPath, "cp", remoteMakefileCliPath)
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api.UploadFile(remotePath, makefilePath, "text/plain")
+
+	cmd := exec.Command(blobBinPath, "cp", remoteCliPath)
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -193,7 +233,10 @@ func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownloadFileAlreadyExists(t *testing.T) {
-	cmd := exec.Command(blobBinPath, "cp", remoteMakefileCliPath, makefilePath)
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
+
+	cmd := exec.Command(blobBinPath, "cp", remoteCliPath, makefilePath)
 	cmd.Env = makeEnv("")
 
 	output, err := cmd.CombinedOutput()
@@ -206,7 +249,10 @@ func TestCommandLineInterfaceDownloadFileAlreadyExists(t *testing.T) {
 }
 
 func TestCommandLineInterfaceDownloadFails(t *testing.T) {
-	cmd := exec.Command(blobBinPath, "cp", remoteMakefileCliPath, "../Makefile2")
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
+
+	cmd := exec.Command(blobBinPath, "cp", remoteCliPath, "../Makefile2")
 	cmd.Env = makeEnv("")
 
 	output, err := cmd.CombinedOutput()
@@ -219,10 +265,13 @@ func TestCommandLineInterfaceDownloadFails(t *testing.T) {
 }
 
 func TestCommandLineInterfaceAppend(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
 
-	cmd := exec.Command(blobBinPath, "append", remoteMakefileCliPath, "--string", "something extra")
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api.UploadFile(remotePath, makefilePath, "text/plain")
+
+	cmd := exec.Command(blobBinPath, "append", remoteCliPath, "--string", "something extra")
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -233,15 +282,17 @@ func TestCommandLineInterfaceAppend(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "", string(output))
 
-	contents, err := api.GetFileContents(remoteMakefileRelPath)
+	contents, err := api.GetFileContents(remotePath)
 	assert.Nil(t, err)
 
 	assert.Equal(t, string(*makefileBytes)+"something extra", contents)
 }
 
 func TestCommandLineInterfaceAppendFails(t *testing.T) {
-	cmd := exec.Command(blobBinPath, "append", remoteMakefileCliPath, "--string", "something extra")
-	cmd.Env = makeEnv("")
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
+
+	cmd := exec.Command(blobBinPath, "append", remoteCliPath, "--string", "something extra")
 
 	output, err := cmd.CombinedOutput()
 	if err == nil {
@@ -253,8 +304,10 @@ func TestCommandLineInterfaceAppendFails(t *testing.T) {
 }
 
 func TestCommandLineInterfaceList(t *testing.T) {
+	remotePath := getTestFilePath()
+
 	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
+	api.UploadFile(remotePath, makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "ls", "blob:/clientlib")
 	cmd.Env = makeEnv(testingAccessToken)
@@ -279,8 +332,10 @@ func TestCommandLineInterfaceList(t *testing.T) {
 }
 
 func TestCommandLineInterfaceListRecursive(t *testing.T) {
+	remotePath := getTestFilePath()
+
 	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
+	api.UploadFile(remotePath, makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "ls", "blob:/clientlib", "-r")
 	cmd.Env = makeEnv(testingAccessToken)
@@ -295,20 +350,23 @@ func TestCommandLineInterfaceListRecursive(t *testing.T) {
 	foundFiles := strings.Split(string(output), "\n")
 	found := false
 	for _, str := range foundFiles {
-		if str == "clientlib/testing/makefile" {
+		if str == remotePath {
 			found = true
 			break
 		}
 	}
 
-	assert.True(t, found, "Did not find clientlib/testing/makefile in blobstorage.")
+	assert.True(t, found, fmt.Sprintf("Did not find %s in blobstorage.", remotePath))
 }
 
 func TestCommandLineInterfaceDelete(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
 
-	cmd := exec.Command(blobBinPath, "rm", remoteMakefileCliPath)
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api.UploadFile(remotePath, makefilePath, "text/plain")
+
+	cmd := exec.Command(blobBinPath, "rm", remoteCliPath)
 	cmd.Env = makeEnv(testingAccessToken)
 
 	output, err := cmd.CombinedOutput()
@@ -319,17 +377,22 @@ func TestCommandLineInterfaceDelete(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "", string(output))
 
-	stat, err := api.StatFile(remoteMakefileRelPath)
+	stat, err := api.StatFile(remotePath)
 	assert.Nil(t, err)
 
 	assert.Equal(t, stat.Exists, false)
 }
 
 func TestCommandLineInterfaceDeleteFails(t *testing.T) {
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remoteMakefileRelPath, makefilePath, "text/plain")
+	remotePath := getTestFilePath()
+	remoteCliPath := getTestFileCliPath(remotePath)
 
-	cmd := exec.Command(blobBinPath, "rm", remoteMakefileCliPath)
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	err := api.UploadFile(remotePath, makefilePath, "text/plain")
+	assert.Nil(t, err)
+	defer api.DeleteFile(remotePath)
+
+	cmd := exec.Command(blobBinPath, "rm", remoteCliPath)
 	cmd.Env = makeEnv("")
 
 	output, err := cmd.CombinedOutput()
@@ -340,7 +403,7 @@ func TestCommandLineInterfaceDeleteFails(t *testing.T) {
 	expectedOutput := "Error: Blobstore Delete Failed (403): \n" + blobCliHelpStrings["rm"] + "\n"
 	assert.Equal(t, expectedOutput, string(output))
 
-	stat, err := api.StatFile(remoteMakefileRelPath)
+	stat, err := api.StatFile(remotePath)
 	assert.Nil(t, err)
 
 	assert.Equal(t, stat.Exists, true)
