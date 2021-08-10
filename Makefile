@@ -11,9 +11,7 @@ INSTALLED_NAME := /usr/local/bin/$(EXECUTABLE)
 WP_PACKAGE_DIR := ./cmd/blobapi
 PACKAGE_PATHS := $(WP_PACKAGE_DIR)
 
-AUTOGEN_VERSION_FILENAME=$(WP_PACKAGE_DIR)/version-temp.go
-
-SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSION_FILENAME)
+SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go")
 
 COVERAGE_FILE=coverage.out
 
@@ -54,7 +52,7 @@ install isntall: $(BIN_NAME)
 	cp $(BIN_NAME) $(INSTALLED_NAME)
 
 .PHONY: test
-test: $(AUTOGEN_VERSION_FILENAME) $(BIN_NAME)
+test: $(BIN_NAME)
 	@if [ -z $$T ]; then \
 		$(GO) test -v ./...; \
 	else \
@@ -62,19 +60,12 @@ test: $(AUTOGEN_VERSION_FILENAME) $(BIN_NAME)
 	fi
 
 
-$(COVERAGE_FILE): $(AUTOGEN_VERSION_FILENAME) $(BIN_NAME)
+$(COVERAGE_FILE): $(BIN_NAME)
 	$(GO) test -v --coverprofile=$(COVERAGE_FILE) ./...
 
 .PHONY: coverage
 coverage: $(COVERAGE_FILE)
 	$(GO) tool cover -func=$(COVERAGE_FILE)
-
-.INTERMEDIATE: $(AUTOGEN_VERSION_FILENAME)
-$(AUTOGEN_VERSION_FILENAME):
-	@version="v$$(cat VERSION)" && \
-	build="$$(if [ "$$(git describe)" != "$$version" ]; then echo "-$$(git rev-parse --short HEAD)"; fi)" && \
-	dirty="$$(if [ ! -z "$$(git diff)" ]; then echo "-dirty"; fi)" && \
-	printf "package blobapi\n\nconst VersionBuild = \"%s%s%s\"" $$version $$build $$dirty > $@
 
 .PHONY: pretty-coverage
 pretty-coverage: $(COVERAGE_FILE)
