@@ -15,7 +15,7 @@ SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go")
 
 COVERAGE_FILE=coverage.out
 
-PUBLISH = publish/wp-linux-amd64 publish/wp-darwin-amd64
+PUBLISH = publish/$(EXECUTABLE)-linux-amd64 publish/$(EXECUTABLE)-darwin-amd64 publish/$(EXECUTABLE)-darwin-arm64
 
 
 .PHONY: all
@@ -29,20 +29,27 @@ $(BIN_NAME): $(SRC)
 .PHONY: publish
 publish: $(PUBLISH)
 
-.PHONY: publish/wp-linux-amd64
-publish/wp-linux-amd64:
+.PHONY: publish/$(EXECUTABLE)-linux-amd64
+publish/$(EXECUTABLE)-linux-amd64:
 	# Force build; don't let existing versions interfere.
 	rm -f $(BIN_NAME)
 	GOOS=linux GOARCH=amd64 $(MAKE) $(BIN_NAME)
 	mkdir -p $$(dirname "$@")
 	mv $(BIN_NAME) $@
 
-
-.PHONY: publish/wp-darwin-amd64
-publish/wp-darwin-amd64:
+.PHONY: publish/$(EXECUTABLE)-darwin-amd64
+publish/$(EXECUTABLE)-darwin-amd64:
 	# Force build; don't let existing versions interfere.
 	rm -f $(BIN_NAME)
 	GOOS=darwin GOARCH=amd64 $(MAKE) $(BIN_NAME)
+	mkdir -p $$(dirname "$@")
+	mv $(BIN_NAME) $@
+
+.PHONY: publish/$(EXECUTABLE)-darwin-arm64
+publish/$(EXECUTABLE)-darwin-arm64:
+	# Force build; don't let existing versions interfere.
+	rm -f $(BIN_NAME)
+	GOOS=darwin GOARCH=arm64 $(MAKE) $(BIN_NAME)
 	mkdir -p $$(dirname "$@")
 	mv $(BIN_NAME) $@
 

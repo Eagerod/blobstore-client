@@ -19,29 +19,17 @@ steps:
     commands:
       - make
 
-  - name: publish-linux-amd64-version
+  - name: publish
     image: golang:1.16
     commands:
-      - make
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob $${BLOBSTORE_URL}/$${GOOS}-$${GOARCH}/latest/blob"
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob $${BLOBSTORE_URL}/$${GOOS}-$${GOARCH}/${DRONE_TAG}/blob"
+      - make publish
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-linux-amd64 $${BLOBSTORE_URL}/linux-amd64/latest/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-linux-amd64 $${BLOBSTORE_URL}/linux-amd64/${DRONE_TAG}/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-amd64 $${BLOBSTORE_URL}/darwin-amd64/latest/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-amd64 $${BLOBSTORE_URL}/darwin-amd64/${DRONE_TAG}/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-arm64 $${BLOBSTORE_URL}/darwin-arm64/latest/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-arm64 $${BLOBSTORE_URL}/darwin-arm64/${DRONE_TAG}/blob"
     environment:
-      GOOS: linux
-      GOARCH: amd64
-      <<: *blobstore_credentials
-    when:
-      event:
-        - tag
-
-  - name: publish-darwin-amd64-version
-    image: golang:1.16
-    commands:
-      - make
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob $${BLOBSTORE_URL}/$${GOOS}-$${GOARCH}/latest/blob"
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob $${BLOBSTORE_URL}/$${GOOS}-$${GOARCH}/${DRONE_TAG}/blob"
-    environment:
-      GOOS: darwin
-      GOARCH: amd64
       <<: *blobstore_credentials
     when:
       event:
@@ -50,12 +38,12 @@ steps:
   - name: publish-internal-version
     image: golang:1.16
     commands:
-      - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "http://192.168.200.71"_' src/main.go
-      - make
-      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob $${BLOBSTORE_URL}/$${GOOS}-$${GOARCH}/latest-internal/blob"
+      - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "https://blob.internal.aleemhaji.com"_' main.go
+      - make publish
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-linux-amd64 $${BLOBSTORE_URL}/linux-amd64/latest-internal/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-amd64 $${BLOBSTORE_URL}/darwin-amd64/latest-internal/blob"
+      - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @bin/blob-darwin-arm64 $${BLOBSTORE_URL}/darwin-arm64/latest-internal/blob"
     environment:
-      GOOS: linux
-      GOARCH: amd64
       <<: *blobstore_credentials
     when:
       branch: 
