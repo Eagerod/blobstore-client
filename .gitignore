@@ -3,3 +3,4 @@ build
 deps
 coverage.out
 .env
+publish

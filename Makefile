@@ -1,5 +1,4 @@
 GO := go
-IMAGEMAGICK := convert
 
 MAIN_FILE := main.go
 
@@ -8,8 +7,8 @@ EXECUTABLE := blob
 BIN_NAME := $(BUILD_DIR)/$(EXECUTABLE)
 INSTALLED_NAME := /usr/local/bin/$(EXECUTABLE)
 
-WP_PACKAGE_DIR := ./cmd/blobapi
-PACKAGE_PATHS := $(WP_PACKAGE_DIR)
+PACKAGE_DIR := ./cmd/blobapi
+PACKAGE_PATHS := $(PACKAGE_DIR)
 
 SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go")
 
@@ -31,7 +30,7 @@ publish: $(PUBLISH)
 
 .PHONY: publish/$(EXECUTABLE)-linux-amd64
 publish/$(EXECUTABLE)-linux-amd64:
-	# Force build; don't let existing versions interfere.
+	@# Force build; don't let existing versions interfere.
 	rm -f $(BIN_NAME)
 	GOOS=linux GOARCH=amd64 $(MAKE) $(BIN_NAME)
 	mkdir -p $$(dirname "$@")
@@ -39,7 +38,7 @@ publish/$(EXECUTABLE)-linux-amd64:
 
 .PHONY: publish/$(EXECUTABLE)-darwin-amd64
 publish/$(EXECUTABLE)-darwin-amd64:
-	# Force build; don't let existing versions interfere.
+	@# Force build; don't let existing versions interfere.
 	rm -f $(BIN_NAME)
 	GOOS=darwin GOARCH=amd64 $(MAKE) $(BIN_NAME)
 	mkdir -p $$(dirname "$@")
@@ -47,7 +46,7 @@ publish/$(EXECUTABLE)-darwin-amd64:
 
 .PHONY: publish/$(EXECUTABLE)-darwin-arm64
 publish/$(EXECUTABLE)-darwin-arm64:
-	# Force build; don't let existing versions interfere.
+	@# Force build; don't let existing versions interfere.
 	rm -f $(BIN_NAME)
 	GOOS=darwin GOARCH=arm64 $(MAKE) $(BIN_NAME)
 	mkdir -p $$(dirname "$@")
