@@ -11,6 +11,7 @@ steps:
   - name: test
     image: golang:1.16
     commands:
+      - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "https://blob.internal.aleemhaji.com"_' main.go
       - make test
   - name: build
     image: golang:1.16
