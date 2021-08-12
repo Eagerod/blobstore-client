@@ -12,7 +12,7 @@ import (
 )
 
 import (
-	"blobapi"
+	"gitea.internal.aleemhaji.com/aleem/blobapi/cmd/blobapi"
 )
 
 const BlobStoreReadAclEnvironmentVariable = "BLOBSTORE_READ_ACL"
