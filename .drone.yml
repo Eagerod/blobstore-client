@@ -11,7 +11,8 @@ steps:
   - name: test
     image: golang:1.16
     commands:
-      - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "https://blob.internal.aleemhaji.com"_' main_test.go cmd/blobapi/cli.go
+      - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "https://blob.internal.aleemhaji.com"_' main_test.go
+      - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "https://blob.internal.aleemhaji.com"_' cmd/blobapi/cli.go
       - make test
   - name: build
     image: golang:1.16
@@ -47,7 +48,8 @@ steps:
   - name: publish-internal-latest
     image: golang:1.16
     commands:
-      - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "https://blob.internal.aleemhaji.com"_' main_test.go cmd/blobapi/cli.go
+      - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "https://blob.internal.aleemhaji.com"_' main_test.go
+      - sed -i 's_BlobStoreDefaultUrlBase = .*_BlobStoreDefaultUrlBase = "https://blob.internal.aleemhaji.com"_' cmd/blobapi/cli.go
       - make publish
       - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @publish/blob-linux-amd64 https://blob.internal.aleemhaji.com/linux-amd64/latest-internal/blob"
       - "curl -fsSL -X POST -H \"X-Blobstore-Write-Acl: $${BLOBSTORE_WRITE_ACL}\" --data-binary @publish/blob-darwin-amd64 https://blob.internal.aleemhaji.com/darwin-amd64/latest-internal/blob"
