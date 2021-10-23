@@ -28,7 +28,7 @@ import (
 const testingAccessToken string = "ad4c3f2d4fb81f4118f837464b961eebda026d8c52a7cc967047cc3c2a3f6a43"
 const makefilePath string = "Makefile"
 const blobBinPath string = "./build/blob"
-const blobstoreBaseUrl string = "https://blob.internal.aleemhaji.com"
+const blobstoreBaseUrl string = "https://blob.aleemhaji.com"
 
 var commands []string = make([]string, 0, 0)
 var blobCliHelpStrings map[string]string = make(map[string]string, 0)
