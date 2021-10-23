@@ -3,7 +3,6 @@ package credential_provider
 import (
 	"net/http"
 	"net/textproto"
-	"os"
 )
 
 const (
@@ -19,10 +18,6 @@ type CredentialProviderChain struct {
 }
 
 var defaultPc *CredentialProviderChain
-
-type ICredentialProvider interface {
-	AuthorizeRequest(*http.Request) error
-}
 
 func HasReadAclHeader(request *http.Request) bool {
 	_, ok := request.Header[textproto.CanonicalMIMEHeaderKey(HttpRequestReadAclHeader)]
@@ -62,39 +57,5 @@ func (cpc *CredentialProviderChain) AuthorizeRequest(request *http.Request) erro
 	}
 
 	// Maybe no authorization is desired.
-	return nil
-}
-
-type DirectCredentialProvider struct {
-	ReadAcl  string
-	WriteAcl string
-}
-
-func (dcp *DirectCredentialProvider) AuthorizeRequest(request *http.Request) error {
-	if !HasReadAclHeader(request) {
-		request.Header.Add(HttpRequestReadAclHeader, dcp.ReadAcl)
-	}
-	if !HasWriteAclHeader(request) {
-		request.Header.Add(HttpRequestWriteAclHeader, dcp.WriteAcl)
-	}
-	return nil
-}
-
-type EnvironmentCredentialProvider struct {
-	ReadAclEnvironmentVariable  string
-	WriteAclEnvironmentVariable string
-}
-
-func (ecp *EnvironmentCredentialProvider) AuthorizeRequest(request *http.Request) error {
-	if !HasReadAclHeader(request) {
-		if acl, ok := os.LookupEnv(ecp.ReadAclEnvironmentVariable); ok {
-			request.Header.Add(HttpRequestReadAclHeader, acl)
-		}
-	}
-	if !HasWriteAclHeader(request) {
-		if acl, ok := os.LookupEnv(ecp.WriteAclEnvironmentVariable); ok {
-			request.Header.Add(HttpRequestWriteAclHeader, acl)
-		}
-	}
 	return nil
 }
