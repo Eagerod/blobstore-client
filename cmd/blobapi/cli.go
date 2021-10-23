@@ -11,6 +11,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+import (
+	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/credential_provider"
+)
+
 const BlobStoreReadAclEnvironmentVariable = "BLOBSTORE_READ_ACL"
 const BlobStoreWriteAclEnvironmentVariable = "BLOBSTORE_WRITE_ACL"
 const BlobStoreDefaultUrlBase = "https://blob.internal.aleemhaji.com"
@@ -34,7 +38,7 @@ func newBlobParsedArg(arg string) *blobParsedArg {
 func Execute() error {
 	var b IBlobStoreApiClient = NewBlobStoreApiClient(
 		BlobStoreDefaultUrlBase,
-		DefaultCredentialProviderChain(),
+		credential_provider.DefaultCredentialProviderChain(),
 	)
 
 	var contentType string

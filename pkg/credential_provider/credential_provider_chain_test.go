@@ -1,4 +1,4 @@
-package blobapi
+package credential_provider
 
 import (
 	"net/http"

@@ -18,6 +18,7 @@ import (
 
 import (
 	"gitea.internal.aleemhaji.com/aleem/blobapi/cmd/blobapi"
+	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/credential_provider"
 )
 
 // NOTE: This package expects a fresh binary to have just been installed on the
@@ -112,7 +113,7 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "", string(output))
 
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	contents, err := api.GetFileContents(remotePath)
 	assert.Nil(t, err)
 	defer api.DeleteFile(remotePath)
@@ -135,7 +136,7 @@ func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "", string(output))
 
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	contents, err := api.GetFileContents(remotePath)
 	assert.Nil(t, err)
 	defer api.DeleteFile(remotePath)
@@ -147,7 +148,7 @@ func TestCommandLineInterfaceUploadAlreadyExists(t *testing.T) {
 	remotePath := getTestFilePath()
 	remoteCliPath := getTestFileCliPath(remotePath)
 
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	err := api.UploadFile(remotePath, makefilePath, "text/plain")
 	assert.Nil(t, err)
 	defer api.DeleteFile(remotePath)
@@ -168,7 +169,7 @@ func TestCommandLineInterfaceUploadFails(t *testing.T) {
 	remotePath := getTestFilePath()
 	remoteCliPath := getTestFileCliPath(remotePath)
 
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	err := api.UploadFile(remotePath, makefilePath, "text/plain")
 	assert.Nil(t, err)
 	defer api.DeleteFile(remotePath)
@@ -189,7 +190,7 @@ func TestCommandLineInterfaceDownload(t *testing.T) {
 	remotePath := getTestFilePath()
 	remoteCliPath := getTestFileCliPath(remotePath)
 
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remotePath, makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "cp", remoteCliPath, "../Makefile2")
@@ -217,7 +218,7 @@ func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
 	remotePath := getTestFilePath()
 	remoteCliPath := getTestFileCliPath(remotePath)
 
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remotePath, makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "cp", remoteCliPath)
@@ -268,7 +269,7 @@ func TestCommandLineInterfaceAppend(t *testing.T) {
 	remotePath := getTestFilePath()
 	remoteCliPath := getTestFileCliPath(remotePath)
 
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remotePath, makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "append", remoteCliPath, "--string", "something extra")
@@ -306,7 +307,7 @@ func TestCommandLineInterfaceAppendFails(t *testing.T) {
 func TestCommandLineInterfaceList(t *testing.T) {
 	remotePath := getTestFilePath()
 
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remotePath, makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "ls", "blob:/clientlib")
@@ -334,7 +335,7 @@ func TestCommandLineInterfaceList(t *testing.T) {
 func TestCommandLineInterfaceListRecursive(t *testing.T) {
 	remotePath := getTestFilePath()
 
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remotePath, makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "ls", "blob:/clientlib", "-r")
@@ -363,7 +364,7 @@ func TestCommandLineInterfaceDelete(t *testing.T) {
 	remotePath := getTestFilePath()
 	remoteCliPath := getTestFileCliPath(remotePath)
 
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	api.UploadFile(remotePath, makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "rm", remoteCliPath)
@@ -387,7 +388,7 @@ func TestCommandLineInterfaceDeleteFails(t *testing.T) {
 	remotePath := getTestFilePath()
 	remoteCliPath := getTestFileCliPath(remotePath)
 
-	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &blobapi.DirectCredentialProvider{testingAccessToken, testingAccessToken})
+	api := blobapi.NewBlobStoreApiClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	err := api.UploadFile(remotePath, makefilePath, "text/plain")
 	assert.Nil(t, err)
 	defer api.DeleteFile(remotePath)
