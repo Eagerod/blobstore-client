@@ -1,4 +1,4 @@
-package blobapi
+package blob
 
 import (
 	"bufio"
@@ -16,6 +16,10 @@ import (
 	"time"
 )
 
+import (
+	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/credential_provider"
+)
+
 type IHttpClient interface {
 	Do(*http.Request) (*http.Response, error)
 	Get(string) (*http.Response, error)
@@ -26,17 +30,9 @@ type IHttpClient interface {
 
 type BlobStoreApiClient struct {
 	DefaultUrl         string
-	CredentialProvider ICredentialProvider
+	CredentialProvider credential_provider.ICredentialProvider
 
 	http IHttpClient
-}
-
-type BlobFileStat struct {
-	Path      string
-	Name      string
-	MimeType  string
-	SizeBytes int
-	Exists    bool
 }
 
 type IBlobStoreApiClient interface {
@@ -59,7 +55,7 @@ type IBlobStoreApiClient interface {
 	DeleteFile(path string) error
 }
 
-func NewBlobStoreApiClient(url string, credentialProvider ICredentialProvider) *BlobStoreApiClient {
+func NewBlobStoreApiClient(url string, credentialProvider credential_provider.ICredentialProvider) *BlobStoreApiClient {
 	// Make sure that the base url looks like a path, so that url resolution
 	// always uses the full base url as the prefix.
 	if !strings.HasSuffix(url, "/") {
