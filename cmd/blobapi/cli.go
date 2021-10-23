@@ -12,6 +12,7 @@ import (
 )
 
 import (
+	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/blob"
 	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/credential_provider"
 )
 
@@ -36,7 +37,7 @@ func newBlobParsedArg(arg string) *blobParsedArg {
 }
 
 func Execute() error {
-	var b IBlobStoreApiClient = NewBlobStoreApiClient(
+	var b blob.IBlobStoreApiClient = blob.NewBlobStoreApiClient(
 		BlobStoreDefaultUrlBase,
 		credential_provider.DefaultCredentialProviderChain(),
 	)

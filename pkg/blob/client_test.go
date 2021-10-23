@@ -1,4 +1,4 @@
-package blobapi
+package blob
 
 import (
 	"bufio"

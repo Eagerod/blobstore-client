@@ -1,4 +1,4 @@
-package blobapi
+package blob
 
 import (
 	"bufio"
@@ -33,14 +33,6 @@ type BlobStoreApiClient struct {
 	CredentialProvider credential_provider.ICredentialProvider
 
 	http IHttpClient
-}
-
-type BlobFileStat struct {
-	Path      string
-	Name      string
-	MimeType  string
-	SizeBytes int
-	Exists    bool
 }
 
 type IBlobStoreApiClient interface {
