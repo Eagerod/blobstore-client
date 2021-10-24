@@ -16,8 +16,6 @@ import (
 	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/credential_provider"
 )
 
-const BlobStoreReadAclEnvironmentVariable = "BLOBSTORE_READ_ACL"
-const BlobStoreWriteAclEnvironmentVariable = "BLOBSTORE_WRITE_ACL"
 const BlobStoreDefaultUrlBase = "https://blob.aleemhaji.com"
 
 type blobParsedArg struct {
