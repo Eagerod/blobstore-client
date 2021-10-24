@@ -2,7 +2,6 @@ package blobapi
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -39,42 +38,11 @@ func Execute() error {
 		credential_provider.DefaultCredentialProviderChain(),
 	)
 
-	var recursive bool
 
 	baseCommand := &cobra.Command{
 		Use:   "blob",
 		Short: "Blobstore CLI",
 		Long:  "Download, upload or append data to the blobstore",
-	}
-
-	lsCommand := &cobra.Command{
-		Use:   "ls [BlobPath]",
-		Short: "List files on blobstore",
-		Long:  "List existing files in the blobstore",
-		Args:  cobra.RangeArgs(0, 1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			prefix := ""
-
-			if len(args) == 1 {
-				lsArg := newBlobParsedArg(args[0])
-				if !lsArg.isRemote {
-					return errors.New("Must start remote ls path with blob:/")
-				}
-
-				prefix = lsArg.path
-			}
-
-			files, err := b.ListPrefix(prefix, recursive)
-			if err != nil {
-				return err
-			}
-
-			for i := range files {
-				fmt.Println(files[i])
-			}
-
-			return nil
-		},
 	}
 
 	rmCommand := &cobra.Command{
@@ -93,11 +61,10 @@ func Execute() error {
 		},
 	}
 
-	lsCommand.Flags().BoolVarP(&recursive, "recursive", "r", false, "List all files and folders recursively")
 
 	baseCommand.AddCommand(newCpCommand(b))
 	baseCommand.AddCommand(newAppendCommand(b))
-	baseCommand.AddCommand(lsCommand)
+	baseCommand.AddCommand(newLsCommand(b))
 	baseCommand.AddCommand(rmCommand)
 
 	return baseCommand.Execute()
