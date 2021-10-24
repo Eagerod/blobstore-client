@@ -39,33 +39,12 @@ func Execute() error {
 		credential_provider.DefaultCredentialProviderChain(),
 	)
 
-	var appendString string
 	var recursive bool
 
 	baseCommand := &cobra.Command{
 		Use:   "blob",
 		Short: "Blobstore CLI",
 		Long:  "Download, upload or append data to the blobstore",
-	}
-
-	appendCommand := &cobra.Command{
-		Use:   "append <BlobPath>",
-		Short: "Append to blobstore",
-		Long:  "Append to an existing file in the blobstore",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if appendString == "" {
-				return errors.New("Nothing to append")
-			}
-
-			appendArg := newBlobParsedArg(args[0])
-
-			if !appendArg.isRemote {
-				return errors.New("Cannot append to local file")
-			}
-
-			return b.AppendString(appendArg.path, appendString)
-		},
 	}
 
 	lsCommand := &cobra.Command{
@@ -114,11 +93,10 @@ func Execute() error {
 		},
 	}
 
-	appendCommand.Flags().StringVarP(&appendString, "string", "s", "", "String to append")
 	lsCommand.Flags().BoolVarP(&recursive, "recursive", "r", false, "List all files and folders recursively")
 
 	baseCommand.AddCommand(newCpCommand(b))
-	baseCommand.AddCommand(appendCommand)
+	baseCommand.AddCommand(newAppendCommand(b))
 	baseCommand.AddCommand(lsCommand)
 	baseCommand.AddCommand(rmCommand)
 
