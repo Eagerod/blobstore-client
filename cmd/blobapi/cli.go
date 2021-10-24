@@ -1,7 +1,6 @@
 package blobapi
 
 import (
-	"errors"
 	"strings"
 )
 
@@ -38,34 +37,16 @@ func Execute() error {
 		credential_provider.DefaultCredentialProviderChain(),
 	)
 
-
 	baseCommand := &cobra.Command{
 		Use:   "blob",
 		Short: "Blobstore CLI",
 		Long:  "Download, upload or append data to the blobstore",
 	}
 
-	rmCommand := &cobra.Command{
-		Use:   "rm <BlobPath>",
-		Short: "Remove from blobstore",
-		Long:  "Delete a file from the blobstore",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			rmArg := newBlobParsedArg(args[0])
-
-			if !rmArg.isRemote {
-				return errors.New("Cannot delete a local file")
-			}
-
-			return b.DeleteFile(rmArg.path)
-		},
-	}
-
-
 	baseCommand.AddCommand(newCpCommand(b))
 	baseCommand.AddCommand(newAppendCommand(b))
 	baseCommand.AddCommand(newLsCommand(b))
-	baseCommand.AddCommand(rmCommand)
+	baseCommand.AddCommand(newRmCommand(b))
 
 	return baseCommand.Execute()
 }
