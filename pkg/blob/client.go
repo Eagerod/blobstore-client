@@ -2,7 +2,6 @@ package blob
 
 import (
 	"bufio"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -228,37 +227,7 @@ func (b *BlobStoreClient) AppendFile(path string, source string) error {
 }
 
 func (b *BlobStoreClient) ListPrefix(prefix string, recursive bool) ([]string, error) {
-	paths := make([]string, 0)
-
-	for strings.HasPrefix(prefix, "/") {
-		prefix = prefix[1:]
-	}
-
-	requestUrl := b.route("_dir/" + prefix)
-	if recursive {
-		requestUrl += "?recursive=true"
-	}
-
-	request, err := b.NewAuthorizedRequest("GET", requestUrl, nil)
-	if err != nil {
-		return paths, err
-	}
-
-	response, err := b.http.Do(request)
-	if err != nil {
-		return paths, err
-	}
-
-	if response.StatusCode != 200 {
-		return paths, NewBlobStoreHttpError("List", response)
-	}
-
-	err = json.NewDecoder(response.Body).Decode(&paths)
-	if err != nil {
-		return paths, err
-	}
-
-	return paths, nil
+	return b.apiClient.ListPrefix(prefix, recursive)
 }
 
 func (b *BlobStoreClient) DeleteFile(path string) error {

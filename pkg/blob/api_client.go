@@ -2,7 +2,7 @@ package blob
 
 import (
 	"bufio"
-	// "encoding/json"
+	"encoding/json"
 	// "errors"
 	// "fmt"
 	"io"
@@ -42,7 +42,7 @@ type IBlobStoreApiClient interface {
 	GetStat(path string) (*BlobFileStat, error)
 	// GetStream(path string) (*io.Reader, error)
 
-	// ListPrefix(prefix string, recursive bool) ([]string, error)
+	ListPrefix(prefix string, recursive bool) ([]string, error)
 
 	// DeleteFile(path string) error
 }
@@ -164,4 +164,38 @@ func (b *BlobStoreApiClient) GetStat(path string) (*BlobFileStat, error) {
 	}
 
 	return &rv, nil
+}
+
+func (b *BlobStoreApiClient) ListPrefix(prefix string, recursive bool) ([]string, error) {
+	paths := make([]string, 0)
+
+	for strings.HasPrefix(prefix, "/") {
+		prefix = prefix[1:]
+	}
+
+	requestUrl := b.route("_dir/" + prefix)
+	if recursive {
+		requestUrl += "?recursive=true"
+	}
+
+	request, err := b.newAuthorizedRequest("GET", requestUrl, nil)
+	if err != nil {
+		return paths, err
+	}
+
+	response, err := b.http.Do(request)
+	if err != nil {
+		return paths, err
+	}
+
+	if response.StatusCode != 200 {
+		return paths, NewBlobStoreHttpError("List", response)
+	}
+
+	err = json.NewDecoder(response.Body).Decode(&paths)
+	if err != nil {
+		return paths, err
+	}
+
+	return paths, nil
 }

@@ -609,7 +609,7 @@ func TestListRequest(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 	filenames, err := api.ListPrefix("/", false)
 	assert.Nil(t, err)
 
@@ -638,7 +638,7 @@ func TestListRequestRecursive(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 	filenames, err := api.ListPrefix("/", true)
 	assert.Nil(t, err)
 
@@ -658,7 +658,7 @@ func TestListRequestFails(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 	_, err := api.ListPrefix("/", false)
 	assert.Equal(t, "Blobstore List Failed (500): {\"code\":\"BigProblem\",\"message\":\"The code is broken\"}", err.Error())
 }
