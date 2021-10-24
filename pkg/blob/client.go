@@ -28,14 +28,15 @@ type IHttpClient interface {
 	PostForm(string, url.Values) (*http.Response, error)
 }
 
-type BlobStoreApiClient struct {
+type BlobStoreClient struct {
 	DefaultUrl         string
 	CredentialProvider credential_provider.ICredentialProvider
 
 	http IHttpClient
+	apiClient BlobStoreApiClient
 }
 
-type IBlobStoreApiClient interface {
+type IBlobStoreClient interface {
 	UploadStream(path string, stream *bufio.Reader, contentType string) error
 	UploadFile(path string, source string, contentType string) error
 
@@ -55,17 +56,18 @@ type IBlobStoreApiClient interface {
 	DeleteFile(path string) error
 }
 
-func NewBlobStoreApiClient(url string, credentialProvider credential_provider.ICredentialProvider) *BlobStoreApiClient {
+func NewBlobStoreClient(url string, credentialProvider credential_provider.ICredentialProvider) *BlobStoreClient {
 	// Make sure that the base url looks like a path, so that url resolution
 	// always uses the full base url as the prefix.
 	if !strings.HasSuffix(url, "/") {
 		url = url + "/"
 	}
 
-	return &BlobStoreApiClient{
+	return &BlobStoreClient{
 		url,
 		credentialProvider,
 		&http.Client{Timeout: time.Second * 30},
+		BlobStoreApiClient{},
 	}
 }
 
@@ -82,7 +84,7 @@ func NewBlobStoreHttpError(operation string, response *http.Response) error {
 	return errors.New(fmt.Sprintf("Blobstore %s Failed (%d): %s", operation, response.StatusCode, string(body)))
 }
 
-func (b *BlobStoreApiClient) route(path string) string {
+func (b *BlobStoreClient) route(path string) string {
 	// Always remove a / prefix on `path`, since it will resolve itself down to
 	// the host, rather than whatever additional pathing we want to add to the
 	// BlobStore default URL.
@@ -103,7 +105,7 @@ func (b *BlobStoreApiClient) route(path string) string {
 	return baseUrlComponent.ResolveReference(pathUrlComponent).String()
 }
 
-func (b *BlobStoreApiClient) NewAuthorizedRequest(method, path string, body io.Reader) (*http.Request, error) {
+func (b *BlobStoreClient) NewAuthorizedRequest(method, path string, body io.Reader) (*http.Request, error) {
 	request, err := http.NewRequest(method, b.route(path), body)
 	if err != nil {
 		return request, err
@@ -113,7 +115,7 @@ func (b *BlobStoreApiClient) NewAuthorizedRequest(method, path string, body io.R
 	return request, err
 }
 
-func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, contentType string) error {
+func (b *BlobStoreClient) UploadStream(path string, stream *bufio.Reader, contentType string) error {
 	request, err := b.NewAuthorizedRequest("POST", path, stream)
 	if err != nil {
 		return err
@@ -142,7 +144,7 @@ func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, con
 	return nil
 }
 
-func (b *BlobStoreApiClient) UploadFile(path string, source string, contentType string) error {
+func (b *BlobStoreClient) UploadFile(path string, source string, contentType string) error {
 	file, err := os.Open(source)
 	defer file.Close()
 
@@ -159,7 +161,7 @@ type getFileReadStreamResponse struct {
 	contentType string
 }
 
-func (b *BlobStoreApiClient) getFileReadStream(path string) (*getFileReadStreamResponse, error) {
+func (b *BlobStoreClient) getFileReadStream(path string) (*getFileReadStreamResponse, error) {
 	request, err := b.NewAuthorizedRequest("GET", path, nil)
 	if err != nil {
 		return nil, err
@@ -180,7 +182,7 @@ func (b *BlobStoreApiClient) getFileReadStream(path string) (*getFileReadStreamR
 	return &r, nil
 }
 
-func (b *BlobStoreApiClient) GetFileReadStream(path string) (*io.Reader, error) {
+func (b *BlobStoreClient) GetFileReadStream(path string) (*io.Reader, error) {
 	response, err := b.getFileReadStream(path)
 	if err != nil {
 		return nil, err
@@ -188,7 +190,7 @@ func (b *BlobStoreApiClient) GetFileReadStream(path string) (*io.Reader, error) 
 	return response.reader, err
 }
 
-func (b *BlobStoreApiClient) GetFileContents(path string) (string, error) {
+func (b *BlobStoreClient) GetFileContents(path string) (string, error) {
 	body, err := b.GetFileReadStream(path)
 	if err != nil {
 		return "", err
@@ -202,7 +204,7 @@ func (b *BlobStoreApiClient) GetFileContents(path string) (string, error) {
 	return string(bodyBytes), nil
 }
 
-func (b *BlobStoreApiClient) DownloadFile(path, dest string) error {
+func (b *BlobStoreClient) DownloadFile(path, dest string) error {
 	str, err := b.GetFileContents(path)
 	if err != nil {
 		return err
@@ -218,7 +220,7 @@ func (b *BlobStoreApiClient) DownloadFile(path, dest string) error {
 	return err
 }
 
-func (b *BlobStoreApiClient) CatFile(path string) error {
+func (b *BlobStoreClient) CatFile(path string) error {
 	str, err := b.GetFileContents(path)
 	if err != nil {
 		return err
@@ -228,7 +230,7 @@ func (b *BlobStoreApiClient) CatFile(path string) error {
 	return nil
 }
 
-func (b *BlobStoreApiClient) StatFile(path string) (*BlobFileStat, error) {
+func (b *BlobStoreClient) StatFile(path string) (*BlobFileStat, error) {
 	request, err := b.NewAuthorizedRequest("HEAD", path, nil)
 	if err != nil {
 		return nil, err
@@ -266,7 +268,7 @@ func (b *BlobStoreApiClient) StatFile(path string) (*BlobFileStat, error) {
 	return &rv, nil
 }
 
-func (b *BlobStoreApiClient) AppendStream(path string, stream *bufio.Reader) error {
+func (b *BlobStoreClient) AppendStream(path string, stream *bufio.Reader) error {
 	getFileReadStreamResponse, err := b.getFileReadStream(path)
 	if err != nil {
 		return err
@@ -276,12 +278,12 @@ func (b *BlobStoreApiClient) AppendStream(path string, stream *bufio.Reader) err
 	return b.UploadStream(path, multiStream, getFileReadStreamResponse.contentType)
 }
 
-func (b *BlobStoreApiClient) AppendString(path string, value string) error {
+func (b *BlobStoreClient) AppendString(path string, value string) error {
 	stringReader := bufio.NewReader(strings.NewReader(value))
 	return b.AppendStream(path, stringReader)
 }
 
-func (b *BlobStoreApiClient) AppendFile(path string, source string) error {
+func (b *BlobStoreClient) AppendFile(path string, source string) error {
 	file, err := os.Open(source)
 	defer file.Close()
 
@@ -293,7 +295,7 @@ func (b *BlobStoreApiClient) AppendFile(path string, source string) error {
 	return b.AppendStream(path, fileReader)
 }
 
-func (b *BlobStoreApiClient) ListPrefix(prefix string, recursive bool) ([]string, error) {
+func (b *BlobStoreClient) ListPrefix(prefix string, recursive bool) ([]string, error) {
 	paths := make([]string, 0)
 
 	for strings.HasPrefix(prefix, "/") {
@@ -327,7 +329,7 @@ func (b *BlobStoreApiClient) ListPrefix(prefix string, recursive bool) ([]string
 	return paths, nil
 }
 
-func (b *BlobStoreApiClient) DeleteFile(path string) error {
+func (b *BlobStoreClient) DeleteFile(path string) error {
 	request, err := b.NewAuthorizedRequest("DELETE", path, nil)
 	if err != nil {
 		return err

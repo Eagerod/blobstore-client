@@ -12,7 +12,7 @@ import (
 	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/blob"
 )
 
-func newAppendCommand(client blob.IBlobStoreApiClient) *cobra.Command {
+func newAppendCommand(client blob.IBlobStoreClient) *cobra.Command {
 	var appendString string
 
 	command := &cobra.Command{

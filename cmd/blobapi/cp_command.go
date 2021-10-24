@@ -14,7 +14,7 @@ import (
 )
 
 
-func newCpCommand(client blob.IBlobStoreApiClient) *cobra.Command {
+func newCpCommand(client blob.IBlobStoreClient) *cobra.Command {
 	var contentType string
 	var force bool
 

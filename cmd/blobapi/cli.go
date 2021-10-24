@@ -32,7 +32,7 @@ func newBlobParsedArg(arg string) *blobParsedArg {
 }
 
 func Execute() error {
-	var b blob.IBlobStoreApiClient = blob.NewBlobStoreApiClient(
+	var b blob.IBlobStoreClient = blob.NewBlobStoreClient(
 		BlobStoreDefaultUrlBase,
 		credential_provider.DefaultCredentialProviderChain(),
 	)

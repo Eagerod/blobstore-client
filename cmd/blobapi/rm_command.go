@@ -12,7 +12,7 @@ import (
 	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/blob"
 )
 
-func newRmCommand(client blob.IBlobStoreApiClient) *cobra.Command {
+func newRmCommand(client blob.IBlobStoreClient) *cobra.Command {
 	command := &cobra.Command{
 		Use:   "rm <BlobPath>",
 		Short: "Remove from blobstore",

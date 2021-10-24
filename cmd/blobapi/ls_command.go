@@ -13,7 +13,7 @@ import (
 	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/blob"
 )
 
-func newLsCommand(client blob.IBlobStoreApiClient) *cobra.Command {
+func newLsCommand(client blob.IBlobStoreClient) *cobra.Command {
 	var recursive bool
 
 	command := &cobra.Command{
