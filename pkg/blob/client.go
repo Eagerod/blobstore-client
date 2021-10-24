@@ -231,19 +231,5 @@ func (b *BlobStoreClient) ListPrefix(prefix string, recursive bool) ([]string, e
 }
 
 func (b *BlobStoreClient) DeleteFile(path string) error {
-	request, err := b.NewAuthorizedRequest("DELETE", path, nil)
-	if err != nil {
-		return err
-	}
-
-	response, err := b.http.Do(request)
-	if err != nil {
-		return err
-	}
-
-	if response.StatusCode != 200 {
-		return NewBlobStoreHttpError("Delete", response)
-	}
-
-	return nil
+	return b.apiClient.DeleteFile(path)
 }

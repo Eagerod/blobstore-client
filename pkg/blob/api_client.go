@@ -44,7 +44,7 @@ type IBlobStoreApiClient interface {
 
 	ListPrefix(prefix string, recursive bool) ([]string, error)
 
-	// DeleteFile(path string) error
+	DeleteFile(path string) error
 }
 
 type BlobStoreApiClient struct {
@@ -198,4 +198,22 @@ func (b *BlobStoreApiClient) ListPrefix(prefix string, recursive bool) ([]string
 	}
 
 	return paths, nil
+}
+
+func (b *BlobStoreApiClient) DeleteFile(path string) error {
+	request, err := b.newAuthorizedRequest("DELETE", path, nil)
+	if err != nil {
+		return err
+	}
+
+	response, err := b.http.Do(request)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != 200 {
+		return NewBlobStoreHttpError("Delete", response)
+	}
+
+	return nil
 }

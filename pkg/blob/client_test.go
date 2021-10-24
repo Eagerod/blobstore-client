@@ -681,7 +681,7 @@ func TestDeleteRequest(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 
 	err := api.DeleteFile(RemoteTestFilename)
 	assert.Nil(t, err)
@@ -701,7 +701,7 @@ func TestDeleteRequestFails(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 
 	err := api.DeleteFile(RemoteTestFilename)
 	assert.Equal(t, "Blobstore Delete Failed (403): {\"code\":\"PermissionDenied\",\"message\":\"Cannot delete\"}", err.Error())
