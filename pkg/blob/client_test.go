@@ -357,7 +357,7 @@ func TestStatRequest(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 
 	fileStat, err := api.StatFile(RemoteTestFilename)
 	assert.Nil(t, err)
@@ -391,7 +391,7 @@ func TestStatRequestLongerFilename(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 
 	fileStat, err := api.StatFile(RemoteTestDeepFilename)
 	assert.Nil(t, err)
@@ -421,7 +421,7 @@ func TestStatRequestDoesntExist(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 
 	fileStat, err := api.StatFile(RemoteTestFilename)
 	assert.Nil(t, err)
@@ -443,7 +443,7 @@ func TestStatRequestFails(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 	fileStat, err := api.StatFile(RemoteTestFilename)
 	assert.Equal(t, "Blobstore Stat Failed (403)", err.Error())
 	assert.Nil(t, fileStat)

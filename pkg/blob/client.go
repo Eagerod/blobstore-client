@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -28,7 +27,6 @@ type BlobStoreClient struct {
 }
 
 type IBlobStoreClient interface {
-	// UploadStream(path string, stream *bufio.Reader, contentType string) error
 	UploadFile(path string, source string, contentType string) error
 
 	GetFileReadStream(path string) (*io.Reader, error)
@@ -199,41 +197,7 @@ func (b *BlobStoreClient) CatFile(path string) error {
 }
 
 func (b *BlobStoreClient) StatFile(path string) (*BlobFileStat, error) {
-	request, err := b.NewAuthorizedRequest("HEAD", path, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	response, err := b.http.Do(request)
-	if err != nil {
-		return nil, err
-	}
-
-	rv := BlobFileStat{
-		MimeType: response.Header.Get("Content-Type"),
-		Exists:   true,
-	}
-	finalSlash := strings.LastIndex(path, "/")
-	if finalSlash == -1 {
-		rv.Path = ""
-		rv.Name = path
-	} else {
-		rv.Path = path[0 : finalSlash+1]
-		rv.Name = path[finalSlash+1:]
-	}
-
-	size, err := strconv.Atoi(response.Header.Get("Content-Length"))
-	if err == nil {
-		rv.SizeBytes = size
-	}
-
-	if response.StatusCode == 404 {
-		rv.Exists = false
-	} else if response.StatusCode != 200 {
-		return nil, NewBlobStoreHttpError("Stat", response)
-	}
-
-	return &rv, nil
+	return b.apiClient.GetStat(path)
 }
 
 func (b *BlobStoreClient) AppendStream(path string, stream *bufio.Reader) error {

@@ -11,7 +11,7 @@ import (
 	"net/url"
 	// "os"
 	// "path/filepath"
-	// "strconv"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -39,7 +39,7 @@ type IHttpClient interface {
 type IBlobStoreApiClient interface {
 	UploadStream(path string, stream *bufio.Reader, contentType string) error
 
-	// GetStat(path string) (*BlobFileStat, error)
+	GetStat(path string) (*BlobFileStat, error)
 	// GetStream(path string) (*io.Reader, error)
 
 	// ListPrefix(prefix string, recursive bool) ([]string, error)
@@ -128,3 +128,40 @@ func (b *BlobStoreApiClient) UploadStream(path string, stream *bufio.Reader, con
 	return nil
 }
 
+func (b *BlobStoreApiClient) GetStat(path string) (*BlobFileStat, error) {
+	request, err := b.newAuthorizedRequest("HEAD", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := b.http.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	rv := BlobFileStat{
+		MimeType: response.Header.Get("Content-Type"),
+		Exists:   true,
+	}
+	finalSlash := strings.LastIndex(path, "/")
+	if finalSlash == -1 {
+		rv.Path = ""
+		rv.Name = path
+	} else {
+		rv.Path = path[0 : finalSlash+1]
+		rv.Name = path[finalSlash+1:]
+	}
+
+	size, err := strconv.Atoi(response.Header.Get("Content-Length"))
+	if err == nil {
+		rv.SizeBytes = size
+	}
+
+	if response.StatusCode == 404 {
+		rv.Exists = false
+	} else if response.StatusCode != 200 {
+		return nil, NewBlobStoreHttpError("Stat", response)
+	}
+
+	return &rv, nil
+}
