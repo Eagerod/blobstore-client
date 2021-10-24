@@ -13,31 +13,22 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 )
 
 import (
 	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/credential_provider"
 )
 
-type IHttpClient interface {
-	Do(*http.Request) (*http.Response, error)
-	Get(string) (*http.Response, error)
-	Head(string) (*http.Response, error)
-	Post(string, string, io.Reader) (*http.Response, error)
-	PostForm(string, url.Values) (*http.Response, error)
-}
-
 type BlobStoreClient struct {
 	DefaultUrl         string
 	CredentialProvider credential_provider.ICredentialProvider
 
 	http IHttpClient
-	apiClient BlobStoreApiClient
+	apiClient IBlobStoreApiClient
 }
 
 type IBlobStoreClient interface {
-	UploadStream(path string, stream *bufio.Reader, contentType string) error
+	// UploadStream(path string, stream *bufio.Reader, contentType string) error
 	UploadFile(path string, source string, contentType string) error
 
 	GetFileReadStream(path string) (*io.Reader, error)
@@ -63,11 +54,13 @@ func NewBlobStoreClient(url string, credentialProvider credential_provider.ICred
 		url = url + "/"
 	}
 
+	apiClient := NewBlobStoreApiClient(url, credentialProvider)
+
 	return &BlobStoreClient{
 		url,
 		credentialProvider,
-		&http.Client{Timeout: time.Second * 30},
-		BlobStoreApiClient{},
+		apiClient.http,
+		apiClient,
 	}
 }
 
@@ -115,34 +108,9 @@ func (b *BlobStoreClient) NewAuthorizedRequest(method, path string, body io.Read
 	return request, err
 }
 
-func (b *BlobStoreClient) UploadStream(path string, stream *bufio.Reader, contentType string) error {
-	request, err := b.NewAuthorizedRequest("POST", path, stream)
-	if err != nil {
-		return err
-	}
-
-	if contentType == "" {
-		buffer, err := stream.Peek(512)
-		if err != nil && err != io.EOF {
-			return err
-		}
-
-		contentType = http.DetectContentType(buffer)
-	}
-
-	request.Header.Add("Content-Type", contentType)
-
-	response, err := b.http.Do(request)
-	if err != nil {
-		return err
-	}
-
-	if response.StatusCode != 200 {
-		return NewBlobStoreHttpError("Upload", response)
-	}
-
-	return nil
-}
+// func (b *BlobStoreClient) UploadStream(path string, stream *bufio.Reader, contentType string) error {
+// 	return b.apiClient.UploadStream(path, stream, contentType)
+// }
 
 func (b *BlobStoreClient) UploadFile(path string, source string, contentType string) error {
 	file, err := os.Open(source)
@@ -153,7 +121,7 @@ func (b *BlobStoreClient) UploadFile(path string, source string, contentType str
 	}
 
 	fileReader := bufio.NewReader(file)
-	return b.UploadStream(path, fileReader, contentType)
+	return b.apiClient.UploadStream(path, fileReader, contentType)
 }
 
 type getFileReadStreamResponse struct {
@@ -275,7 +243,7 @@ func (b *BlobStoreClient) AppendStream(path string, stream *bufio.Reader) error 
 	}
 
 	multiStream := bufio.NewReader(io.MultiReader(*getFileReadStreamResponse.reader, stream))
-	return b.UploadStream(path, multiStream, getFileReadStreamResponse.contentType)
+	return b.apiClient.UploadStream(path, multiStream, getFileReadStreamResponse.contentType)
 }
 
 func (b *BlobStoreClient) AppendString(path string, value string) error {

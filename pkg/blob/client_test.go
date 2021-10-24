@@ -161,7 +161,7 @@ func TestUploadRequest(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 	err := api.UploadFile(RemoteTestFilename, LocalTestFilePath, RemoteTestFileManualMimeType)
 	assert.Nil(t, err)
 }
@@ -195,7 +195,7 @@ func TestUploadRequestNoContentType(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 	err := api.UploadFile(RemoteTestFilename, LocalTestFilePath, "")
 	assert.Nil(t, err)
 }
@@ -213,7 +213,7 @@ func TestUploadRequestFails(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 	err := api.UploadFile(RemoteTestFilename, LocalTestFilePath, RemoteTestFileManualMimeType)
 	assert.Equal(t, "Blobstore Upload Failed (404): {\"code\":\"NotFound\",\"message\":\"File not found\"}", err.Error())
 }
@@ -510,7 +510,8 @@ func TestAppendStringRequest(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{getMock, postMock}}
+	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{getMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{postMock}}
 	tempFile, err := ioutil.TempFile("", "")
 	assert.Nil(t, err)
 	tempFile.Close()
@@ -576,7 +577,8 @@ func TestAppendFileRequest(t *testing.T) {
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{getMock, postMock}}
+	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{getMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{postMock}}
 	tempFile, err := ioutil.TempFile("", "")
 	assert.Nil(t, err)
 	tempFile.Close()
