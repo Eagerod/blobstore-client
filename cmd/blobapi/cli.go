@@ -3,7 +3,6 @@ package blobapi
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -40,64 +39,13 @@ func Execute() error {
 		credential_provider.DefaultCredentialProviderChain(),
 	)
 
-	var contentType string
 	var appendString string
 	var recursive bool
-	var force bool
 
 	baseCommand := &cobra.Command{
 		Use:   "blob",
 		Short: "Blobstore CLI",
 		Long:  "Download, upload or append data to the blobstore",
-	}
-
-	cpCommand := &cobra.Command{
-		Use:   "cp <LocalPath> <BlobPath> or <BlobPath> <LocalPath>",
-		Short: "Copy files to and from blobstore",
-		Long:  "Upload files to or download files from the blobstore",
-		Args:  cobra.RangeArgs(1, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 1 {
-				cpArg := newBlobParsedArg(args[0])
-				if !cpArg.isRemote {
-					return errors.New("Must download files from blob:/")
-				}
-				return b.CatFile(cpArg.path)
-			}
-
-			// Determine if this is an upload or download command based on which
-			// order the parameters came in.
-			cpArg0 := newBlobParsedArg(args[0])
-			cpArg1 := newBlobParsedArg(args[1])
-
-			if cpArg0.isRemote && cpArg1.isRemote {
-				return errors.New("No support for copying files in the blobstore directly")
-			}
-
-			if !cpArg0.isRemote && !cpArg1.isRemote {
-				return errors.New("Must provide at least one blob:/ path to upload to or download from")
-			}
-
-			if cpArg0.isRemote {
-				if force == false {
-					if _, err := os.Stat(cpArg1.path); err == nil {
-						return errors.New("Destination file already exists on local machine; use --force to overwrite")
-					}
-				}
-				return b.DownloadFile(cpArg0.path, cpArg1.path)
-			} else {
-				if force == false {
-					fileStat, err := b.StatFile(cpArg1.path)
-					if err != nil {
-						return err
-					}
-					if fileStat.Exists {
-						return errors.New("Destination file already exists on blobstore; use --force to overwrite")
-					}
-				}
-				return b.UploadFile(cpArg1.path, cpArg0.path, contentType)
-			}
-		},
 	}
 
 	appendCommand := &cobra.Command{
@@ -166,12 +114,10 @@ func Execute() error {
 		},
 	}
 
-	cpCommand.Flags().StringVarP(&contentType, "type", "t", "", "Content type of uploaded file")
 	appendCommand.Flags().StringVarP(&appendString, "string", "s", "", "String to append")
 	lsCommand.Flags().BoolVarP(&recursive, "recursive", "r", false, "List all files and folders recursively")
-	cpCommand.Flags().BoolVarP(&force, "force", "f", false, "Force the copy if the destination already exists")
 
-	baseCommand.AddCommand(cpCommand)
+	baseCommand.AddCommand(newCpCommand(b))
 	baseCommand.AddCommand(appendCommand)
 	baseCommand.AddCommand(lsCommand)
 	baseCommand.AddCommand(rmCommand)
