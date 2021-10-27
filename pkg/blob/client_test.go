@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 )
 
 import (
@@ -91,9 +90,6 @@ func TestCreation(t *testing.T) {
 	cred := api.CredentialProvider.(*credential_provider.DirectCredentialProvider)
 	assert.Equal(t, RemoteTestReadSecret, cred.ReadAcl)
 	assert.Equal(t, RemoteTestWriteSecret, cred.WriteAcl)
-
-	httpClient := api.http.(*http.Client)
-	assert.Equal(t, time.Second*30, httpClient.Timeout)
 }
 
 func TestUploadRequest(t *testing.T) {

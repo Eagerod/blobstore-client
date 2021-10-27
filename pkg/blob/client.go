@@ -20,7 +20,6 @@ type BlobStoreClient struct {
 	DefaultUrl         string
 	CredentialProvider credential_provider.ICredentialProvider
 
-	http IHttpClient
 	apiClient IBlobStoreApiClient
 }
 
@@ -54,7 +53,6 @@ func NewBlobStoreClient(url string, credentialProvider credential_provider.ICred
 	return &BlobStoreClient{
 		url,
 		credentialProvider,
-		apiClient.http,
 		apiClient,
 	}
 }
