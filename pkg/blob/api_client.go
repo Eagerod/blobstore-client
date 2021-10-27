@@ -3,14 +3,9 @@ package blob
 import (
 	"bufio"
 	"encoding/json"
-	// "errors"
-	// "fmt"
 	"io"
-	// "io/ioutil"
 	"net/http"
 	"net/url"
-	// "os"
-	// "path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +23,11 @@ type BlobFileStat struct {
 	Exists    bool
 }
 
+type BlobFile struct {
+	info 	 BlobFileStat
+	contents *io.Reader
+}
+
 type IHttpClient interface {
 	Do(*http.Request) (*http.Response, error)
 	Get(string) (*http.Response, error)
@@ -40,7 +40,7 @@ type IBlobStoreApiClient interface {
 	UploadStream(path string, stream *bufio.Reader, contentType string) error
 
 	GetStat(path string) (*BlobFileStat, error)
-	// GetStream(path string) (*io.Reader, error)
+	GetFile(path string) (*BlobFile, error)
 
 	ListPrefix(prefix string, recursive bool) ([]string, error)
 
@@ -66,6 +66,37 @@ func NewBlobStoreApiClient(baseUrl string, credentialProvider credential_provide
 		credentialProvider,
 		&http.Client{Timeout: time.Second * 30},
 	}
+}
+
+func NewBlobFileStatFromResponse(basePathComponent string, response *http.Response) BlobFileStat {
+	val := BlobFileStat{
+		MimeType: response.Header.Get("Content-Type"),
+		Exists:   true,
+	}
+
+	// Have to remove components based on the API base URL.
+	requestPath := response.Request.URL.Path
+	relativePath := strings.Replace(requestPath, basePathComponent, "", 1)
+
+	finalSlash := strings.LastIndex(relativePath, "/")
+	if finalSlash == -1 {
+		val.Path = ""
+		val.Name = relativePath
+	} else {
+		val.Path = relativePath[0 : finalSlash+1]
+		val.Name = relativePath[finalSlash+1:]
+	}
+
+	size, err := strconv.Atoi(response.Header.Get("Content-Length"))
+	if err == nil {
+		val.SizeBytes = size
+	}
+
+	if response.StatusCode == 404 {
+		val.Exists = false
+	}
+
+	return val
 }
 
 func (b *BlobStoreApiClient) route(path string) string {
@@ -139,28 +170,46 @@ func (b *BlobStoreApiClient) GetStat(path string) (*BlobFileStat, error) {
 		return nil, err
 	}
 
-	rv := BlobFileStat{
-		MimeType: response.Header.Get("Content-Type"),
-		Exists:   true,
-	}
-	finalSlash := strings.LastIndex(path, "/")
-	if finalSlash == -1 {
-		rv.Path = ""
-		rv.Name = path
-	} else {
-		rv.Path = path[0 : finalSlash+1]
-		rv.Name = path[finalSlash+1:]
+	baseUrlComponent, err := url.Parse(b.baseUrl)
+	if err != nil {
+		return nil, err
 	}
 
-	size, err := strconv.Atoi(response.Header.Get("Content-Length"))
-	if err == nil {
-		rv.SizeBytes = size
-	}
+	stat := NewBlobFileStatFromResponse(baseUrlComponent.Path, response)
 
-	if response.StatusCode == 404 {
-		rv.Exists = false
-	} else if response.StatusCode != 200 {
+	if response.StatusCode != 404 && response.StatusCode != 200 {
 		return nil, NewBlobStoreHttpError("Stat", response)
+	}
+
+	return &stat, nil
+}
+
+func (b *BlobStoreApiClient) GetFile(path string) (*BlobFile, error) {
+	request, err := b.newAuthorizedRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := b.http.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	baseUrlComponent, err := url.Parse(b.baseUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	stat := NewBlobFileStatFromResponse(baseUrlComponent.Path, response)
+
+	if response.StatusCode != 200 {
+		return nil, NewBlobStoreHttpError("Download", response)
+	}
+
+	body := response.Body.(io.Reader)
+	rv := BlobFile{
+		stat,
+		&body,
 	}
 
 	return &rv, nil

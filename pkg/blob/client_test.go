@@ -237,11 +237,12 @@ func TestDownloadRequest(t *testing.T) {
 		response := http.Response{
 			StatusCode: 200,
 			Body:       ioutil.NopCloser(bodyReader),
+			Request:    request,
 		}
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 	tempFile, err := ioutil.TempFile("", "")
 	defer os.Remove(tempFile.Name())
 	assert.Nil(t, err)
@@ -284,11 +285,12 @@ func TestDownloadRequestNonExistentDirectory(t *testing.T) {
 		response := http.Response{
 			StatusCode: 200,
 			Body:       ioutil.NopCloser(bodyReader),
+			Request:    request,
 		}
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 	tempDir, err := ioutil.TempDir("", "")
 	defer os.RemoveAll(tempDir)
 
@@ -317,16 +319,19 @@ func TestDownloadRequestFails(t *testing.T) {
 	api := NewBlobStoreClient(RemoteTestBaseUrl, &credential_provider.DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
 	httpMock := func(params ...interface{}) (*http.Response, error) {
+		request := params[0].(*http.Request)
+
 		bodyReader := strings.NewReader("{\"code\":\"NotFound\",\"message\":\"File not found\"}")
 
 		response := http.Response{
 			StatusCode: 404,
 			Body:       ioutil.NopCloser(bodyReader),
+			Request:    request,
 		}
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{httpMock}}
 	tempFile, err := ioutil.TempFile("", "")
 	assert.Nil(t, err)
 	tempFile.Close()
@@ -348,6 +353,7 @@ func TestStatRequest(t *testing.T) {
 
 		response := http.Response{
 			StatusCode: 200,
+			Request:    request,
 		}
 
 		response.Header = make(map[string][]string)
@@ -382,6 +388,7 @@ func TestStatRequestLongerFilename(t *testing.T) {
 
 		response := http.Response{
 			StatusCode: 200,
+			Request:    request,
 		}
 
 		response.Header = make(map[string][]string)
@@ -416,6 +423,7 @@ func TestStatRequestDoesntExist(t *testing.T) {
 
 		response := http.Response{
 			StatusCode: 404,
+			Request:    request,
 		}
 
 		return &response, nil
@@ -437,8 +445,11 @@ func TestStatRequestFails(t *testing.T) {
 	api := NewBlobStoreClient(RemoteTestBaseUrl, &credential_provider.DirectCredentialProvider{RemoteTestReadSecret, RemoteTestWriteSecret})
 
 	httpMock := func(params ...interface{}) (*http.Response, error) {
+		request := params[0].(*http.Request)
+
 		response := http.Response{
 			StatusCode: 403,
+			Request:    request,
 		}
 		return &response, nil
 	}
@@ -472,6 +483,7 @@ func TestAppendStringRequest(t *testing.T) {
 		response := http.Response{
 			StatusCode: 200,
 			Body:       ioutil.NopCloser(bodyReader),
+			Request:    request,
 		}
 
 		response.Header = make(map[string][]string)
@@ -506,12 +518,12 @@ func TestAppendStringRequest(t *testing.T) {
 
 		response := http.Response{
 			StatusCode: 200,
+			Request:    request,
 		}
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{getMock}}
-	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{postMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{getMock, postMock}}
 	tempFile, err := ioutil.TempFile("", "")
 	assert.Nil(t, err)
 	tempFile.Close()
@@ -542,6 +554,7 @@ func TestAppendFileRequest(t *testing.T) {
 		response := http.Response{
 			StatusCode: 200,
 			Body:       ioutil.NopCloser(bodyReader),
+			Request:    request,
 		}
 
 		response.Header = make(map[string][]string)
@@ -573,12 +586,12 @@ func TestAppendFileRequest(t *testing.T) {
 
 		response := http.Response{
 			StatusCode: 200,
+			Request:    request,
 		}
 		return &response, nil
 	}
 
-	api.http = &TestDrivenHttpClient{t, []HttpMockedMethod{getMock}}
-	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{postMock}}
+	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{t, []HttpMockedMethod{getMock, postMock}}
 	tempFile, err := ioutil.TempFile("", "")
 	assert.Nil(t, err)
 	tempFile.Close()

@@ -28,7 +28,6 @@ type BlobStoreClient struct {
 type IBlobStoreClient interface {
 	UploadFile(path string, source string, contentType string) error
 
-	GetFileReadStream(path string) (*io.Reader, error)
 	GetFileContents(path string) (string, error)
 	DownloadFile(path string, dest string) error
 	CatFile(path string) error
@@ -105,10 +104,6 @@ func (b *BlobStoreClient) NewAuthorizedRequest(method, path string, body io.Read
 	return request, err
 }
 
-// func (b *BlobStoreClient) UploadStream(path string, stream *bufio.Reader, contentType string) error {
-// 	return b.apiClient.UploadStream(path, stream, contentType)
-// }
-
 func (b *BlobStoreClient) UploadFile(path string, source string, contentType string) error {
 	file, err := os.Open(source)
 	defer file.Close()
@@ -121,47 +116,13 @@ func (b *BlobStoreClient) UploadFile(path string, source string, contentType str
 	return b.apiClient.UploadStream(path, fileReader, contentType)
 }
 
-type getFileReadStreamResponse struct {
-	reader      *io.Reader
-	contentType string
-}
-
-func (b *BlobStoreClient) getFileReadStream(path string) (*getFileReadStreamResponse, error) {
-	request, err := b.NewAuthorizedRequest("GET", path, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	response, err := b.http.Do(request)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode != 200 {
-		return nil, NewBlobStoreHttpError("Download", response)
-	}
-
-	body := response.Body.(io.Reader)
-	r := getFileReadStreamResponse{&body, response.Header.Get("Content-Type")}
-
-	return &r, nil
-}
-
-func (b *BlobStoreClient) GetFileReadStream(path string) (*io.Reader, error) {
-	response, err := b.getFileReadStream(path)
-	if err != nil {
-		return nil, err
-	}
-	return response.reader, err
-}
-
 func (b *BlobStoreClient) GetFileContents(path string) (string, error) {
-	body, err := b.GetFileReadStream(path)
+	file, err := b.apiClient.GetFile(path)
 	if err != nil {
 		return "", err
 	}
 
-	bodyBytes, err := ioutil.ReadAll(*body)
+	bodyBytes, err := ioutil.ReadAll(*file.contents)
 	if err != nil {
 		return "", err
 	}
@@ -200,13 +161,13 @@ func (b *BlobStoreClient) StatFile(path string) (*BlobFileStat, error) {
 }
 
 func (b *BlobStoreClient) AppendStream(path string, stream *bufio.Reader) error {
-	getFileReadStreamResponse, err := b.getFileReadStream(path)
+	f, err := b.apiClient.GetFile(path)
 	if err != nil {
 		return err
 	}
 
-	multiStream := bufio.NewReader(io.MultiReader(*getFileReadStreamResponse.reader, stream))
-	return b.apiClient.UploadStream(path, multiStream, getFileReadStreamResponse.contentType)
+	multiStream := bufio.NewReader(io.MultiReader(*f.contents, stream))
+	return b.apiClient.UploadStream(path, multiStream, f.info.MimeType)
 }
 
 func (b *BlobStoreClient) AppendString(path string, value string) error {
