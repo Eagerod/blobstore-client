@@ -94,16 +94,6 @@ func (b *BlobStoreClient) route(path string) string {
 	return baseUrlComponent.ResolveReference(pathUrlComponent).String()
 }
 
-func (b *BlobStoreClient) NewAuthorizedRequest(method, path string, body io.Reader) (*http.Request, error) {
-	request, err := http.NewRequest(method, b.route(path), body)
-	if err != nil {
-		return request, err
-	}
-
-	err = b.CredentialProvider.AuthorizeRequest(request)
-	return request, err
-}
-
 func (b *BlobStoreClient) UploadFile(path string, source string, contentType string) error {
 	file, err := os.Open(source)
 	defer file.Close()
