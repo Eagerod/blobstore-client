@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -71,27 +70,6 @@ func NewBlobStoreHttpError(operation string, response *http.Response) error {
 	}
 
 	return errors.New(fmt.Sprintf("Blobstore %s Failed (%d): %s", operation, response.StatusCode, string(body)))
-}
-
-func (b *BlobStoreClient) route(path string) string {
-	// Always remove a / prefix on `path`, since it will resolve itself down to
-	// the host, rather than whatever additional pathing we want to add to the
-	// BlobStore default URL.
-	for strings.HasPrefix(path, "/") {
-		path = path[1:]
-	}
-
-	pathUrlComponent, err := url.Parse(path)
-	if err != nil {
-		panic(err)
-	}
-
-	baseUrlComponent, err := url.Parse(b.DefaultUrl)
-	if err != nil {
-		panic(err)
-	}
-
-	return baseUrlComponent.ResolveReference(pathUrlComponent).String()
 }
 
 func (b *BlobStoreClient) UploadFile(path string, source string, contentType string) error {

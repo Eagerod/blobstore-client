@@ -99,6 +99,7 @@ func NewBlobFileStatFromResponse(basePathComponent string, response *http.Respon
 	return val
 }
 
+// This should be adapted to return an error, rather than panicing.
 func (b *BlobStoreApiClient) route(path string) string {
 	// Always remove a / prefix on `path`, since it will resolve itself down to
 	// the host, rather than whatever additional pathing we want to add to the

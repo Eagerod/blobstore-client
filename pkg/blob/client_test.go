@@ -96,53 +96,6 @@ func TestCreation(t *testing.T) {
 	assert.Equal(t, time.Second*30, httpClient.Timeout)
 }
 
-func TestRoute(t *testing.T) {
-	resolutions := []struct {
-		BaseUrl       string
-		PathComponent string
-		FinalUrl      string
-	}{
-		{"https://example.org", "/path/to/object", "https://example.org/path/to/object"},
-		{"https://example.org", "path/to/object", "https://example.org/path/to/object"},
-		{"https://example.org/", "/path/to/object", "https://example.org/path/to/object"},
-		{"https://example.org/", "path/to/object", "https://example.org/path/to/object"},
-		{"https://example.org/deeper", "/path/to/object", "https://example.org/deeper/path/to/object"},
-		{"https://example.org/deeper", "path/to/object", "https://example.org/deeper/path/to/object"},
-		{"https://example.org/deeper/", "/path/to/object", "https://example.org/deeper/path/to/object"},
-		{"https://example.org/deeper/", "path/to/object", "https://example.org/deeper/path/to/object"},
-	}
-
-	for _, ti := range resolutions {
-		api := NewBlobStoreClient(ti.BaseUrl, nil)
-
-		assert.Equal(t, ti.FinalUrl, api.route(ti.PathComponent))
-	}
-
-	panics := []struct {
-		BaseUrl       string
-		PathComponent string
-		PanicMessage  string
-	}{
-		{":broken", "", "parse \":broken/\": missing protocol scheme"},
-		{"https://example.org", ":broken", "parse \":broken\": missing protocol scheme"},
-	}
-
-	for _, ti := range panics {
-		api := NewBlobStoreClient(ti.BaseUrl, nil)
-		func() {
-			defer func() {
-				r := recover()
-				if r == nil {
-					t.Errorf("Failed to produce panic: %s", ti.PanicMessage)
-				} else {
-					assert.Equal(t, ti.PanicMessage, r.(error).Error())
-				}
-			}()
-			api.route(ti.PathComponent)
-		}()
-	}
-}
-
 func TestUploadRequest(t *testing.T) {
 	var api *BlobStoreClient = testClient()
 
