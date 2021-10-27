@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -84,8 +83,6 @@ func testClient() *BlobStoreClient {
 
 func TestCreation(t *testing.T) {
 	var api *BlobStoreClient = testClient()
-
-	assert.Equal(t, fmt.Sprintf("%s/", RemoteTestBaseUrl), api.DefaultUrl)
 
 	cred := api.CredentialProvider.(*credential_provider.DirectCredentialProvider)
 	assert.Equal(t, RemoteTestReadSecret, cred.ReadAcl)

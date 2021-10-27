@@ -17,7 +17,6 @@ import (
 )
 
 type BlobStoreClient struct {
-	DefaultUrl         string
 	CredentialProvider credential_provider.ICredentialProvider
 
 	apiClient IBlobStoreApiClient
@@ -42,16 +41,9 @@ type IBlobStoreClient interface {
 }
 
 func NewBlobStoreClient(url string, credentialProvider credential_provider.ICredentialProvider) *BlobStoreClient {
-	// Make sure that the base url looks like a path, so that url resolution
-	// always uses the full base url as the prefix.
-	if !strings.HasSuffix(url, "/") {
-		url = url + "/"
-	}
-
 	apiClient := NewBlobStoreApiClient(url, credentialProvider)
 
 	return &BlobStoreClient{
-		url,
 		credentialProvider,
 		apiClient,
 	}
