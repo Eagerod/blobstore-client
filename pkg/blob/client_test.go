@@ -82,11 +82,9 @@ func testClient() *BlobStoreClient {
 }
 
 func TestCreation(t *testing.T) {
-	var api *BlobStoreClient = testClient()
-
-	cred := api.CredentialProvider.(*credential_provider.DirectCredentialProvider)
-	assert.Equal(t, RemoteTestReadSecret, cred.ReadAcl)
-	assert.Equal(t, RemoteTestWriteSecret, cred.WriteAcl)
+	client := testClient()
+	assert.NotNil(t, client)
+	assert.NotNil(t, client.apiClient)
 }
 
 func TestUploadRequest(t *testing.T) {

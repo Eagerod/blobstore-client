@@ -17,8 +17,6 @@ import (
 )
 
 type BlobStoreClient struct {
-	CredentialProvider credential_provider.ICredentialProvider
-
 	apiClient IBlobStoreApiClient
 }
 
@@ -44,7 +42,6 @@ func NewBlobStoreClient(url string, credentialProvider credential_provider.ICred
 	apiClient := NewBlobStoreApiClient(url, credentialProvider)
 
 	return &BlobStoreClient{
-		credentialProvider,
 		apiClient,
 	}
 }
