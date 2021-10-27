@@ -364,7 +364,7 @@ func TestStatRequestLongerFilename(t *testing.T) {
 	assert.Equal(t, true, fileStat.Exists)
 }
 
-func TestStatRequestDoesntExist(t *testing.T) {
+func TestStatRequestDoesNotExist(t *testing.T) {
 	var api *BlobStoreClient = testClient()
 
 	httpMock := func(params ...interface{}) (*http.Response, error) {
