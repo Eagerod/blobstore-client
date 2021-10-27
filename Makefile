@@ -20,7 +20,7 @@ PUBLISH = publish/$(EXECUTABLE)-linux-amd64 publish/$(EXECUTABLE)-darwin-amd64 p
 .PHONY: all
 all: $(BIN_NAME)
 
-$(BIN_NAME): $(SRC)
+$(BIN_NAME): $(SRC) go.mod go.sum
 	@mkdir -p $(BUILD_DIR)
 	$(GO) build -o $(BIN_NAME) $(MAIN_FILE)
 
@@ -54,8 +54,10 @@ publish/$(EXECUTABLE)-darwin-arm64:
 
 
 .PHONY: install isntall
-install isntall: $(BIN_NAME)
+install isntall: $(INSTALLED_NAME)
+$(INSTALLED_NAME): $(BIN_NAME)
 	cp $(BIN_NAME) $(INSTALLED_NAME)
+
 
 .PHONY: test
 test: $(BIN_NAME)
