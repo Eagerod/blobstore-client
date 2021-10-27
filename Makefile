@@ -11,6 +11,7 @@ PACKAGE_DIR := ./cmd/blobapi
 PACKAGE_PATHS := $(PACKAGE_DIR)
 
 SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go")
+SRC_TEST := $(shell find . -iname "*_test.go")
 
 COVERAGE_FILE=coverage.out
 
@@ -60,7 +61,7 @@ $(INSTALLED_NAME): $(BIN_NAME)
 
 
 .PHONY: test
-test: $(BIN_NAME)
+test: $(BIN_NAME) $(SRC_TEST)
 	@if [ -z $$T ]; then \
 		$(GO) test -v ./...; \
 	else \
@@ -68,7 +69,7 @@ test: $(BIN_NAME)
 	fi
 
 
-$(COVERAGE_FILE): $(BIN_NAME)
+$(COVERAGE_FILE): $(BIN_NAME) $(SRC_TEST)
 	$(GO) test -v --coverprofile=$(COVERAGE_FILE) ./...
 
 .PHONY: coverage
