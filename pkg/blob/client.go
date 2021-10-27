@@ -2,11 +2,9 @@ package blob
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,19 +42,6 @@ func NewBlobStoreClient(url string, credentialProvider credential_provider.ICred
 	return &BlobStoreClient{
 		apiClient,
 	}
-}
-
-func NewBlobStoreHttpError(operation string, response *http.Response) error {
-	if response.Body == nil {
-		return errors.New(fmt.Sprintf("Blobstore %s Failed (%d)", operation, response.StatusCode))
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return err
-	}
-
-	return errors.New(fmt.Sprintf("Blobstore %s Failed (%d): %s", operation, response.StatusCode, string(body)))
 }
 
 func (b *BlobStoreClient) UploadFile(path string, source string, contentType string) error {
