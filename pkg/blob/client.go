@@ -53,30 +53,24 @@ func NewBlobStoreClient(url string, credentialProvider credential_provider.ICred
 }
 
 func (b *BlobStoreClient) Copy(src *url.URL, dst *url.URL, force bool) error {
-	cpArg0 := src
-
-	// Determine if this is an upload or download command based on which
-	// order the parameters came in.
-	cpArg1 := dst
-
-	if cpArg0.Scheme == BlobStoreUrlScheme && cpArg1.Scheme == BlobStoreUrlScheme {
+	if src.Scheme == BlobStoreUrlScheme && dst.Scheme == BlobStoreUrlScheme {
 		return errors.New("No support for copying files in the blobstore directly")
 	}
 
-	if cpArg0.Scheme != BlobStoreUrlScheme && cpArg1.Scheme != BlobStoreUrlScheme {
+	if src.Scheme != BlobStoreUrlScheme && dst.Scheme != BlobStoreUrlScheme {
 		return errors.New("Must provide at least one blob:/ path to upload to or download from")
 	}
 
-	if cpArg0.Scheme == BlobStoreUrlScheme {
+	if src.Scheme == BlobStoreUrlScheme {
 		if force == false {
-			if _, err := os.Stat(cpArg1.Path); err == nil {
+			if _, err := os.Stat(dst.Path); err == nil {
 				return errors.New("Destination file already exists on local machine; use --force to overwrite")
 			}
 		}
-		return b.DownloadFile(cpArg0.Path, cpArg1.Path)
+		return b.DownloadFile(src.Path, dst.Path)
 	} else {
 		if force == false {
-			fileStat, err := b.StatFile(cpArg1.Path)
+			fileStat, err := b.StatFile(dst.Path)
 			if err != nil {
 				return err
 			}
@@ -84,10 +78,9 @@ func (b *BlobStoreClient) Copy(src *url.URL, dst *url.URL, force bool) error {
 				return errors.New("Destination file already exists on blobstore; use --force to overwrite")
 			}
 		}
-		return b.UploadFile(cpArg1.Path, cpArg0.Path, "")
+		return b.UploadFile(dst.Path, src.Path, "")
 	}
 }
-
 
 func (b *BlobStoreClient) UploadFile(path string, source string, contentType string) error {
 	file, err := os.Open(source)
