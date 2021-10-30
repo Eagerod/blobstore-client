@@ -25,13 +25,16 @@ func newAppendCommand(client blob.IBlobStoreClient) *cobra.Command {
 				return errors.New("Nothing to append")
 			}
 
-			appendArg := newBlobParsedArg(args[0])
+			appendArg, err := newBlobParsedArg(args[0])
+			if err != nil {
+				return err
+			}
 
-			if !appendArg.isRemote {
+			if appendArg.Scheme != BlobStoreUrlScheme {
 				return errors.New("Cannot append to local file")
 			}
 
-			return client.AppendString(appendArg.path, appendString)
+			return client.AppendString(appendArg.Path, appendString)
 		},
 	}
 
