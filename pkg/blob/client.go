@@ -41,7 +41,7 @@ type IBlobStoreClient interface {
 
 	DeleteFile(path string) error
 
-	Exists(url_ url.URL) (bool, error)
+	Exists(url_ *url.URL) (bool, error)
 }
 
 func NewBlobStoreClient(url string, credentialProvider credential_provider.ICredentialProvider) *BlobStoreClient {
@@ -61,23 +61,21 @@ func (b *BlobStoreClient) Copy(src *url.URL, dst *url.URL, force bool) error {
 		return errors.New("Must provide at least one blob:/ path to upload to or download from")
 	}
 
-	if src.Scheme == BlobStoreUrlScheme {
-		if force == false {
-			if _, err := os.Stat(dst.Path); err == nil {
-				return errors.New("Destination file already exists on local machine; use --force to overwrite")
-			}
-		}
-		return b.DownloadFile(src.Path, dst.Path)
-	} else {
-		if force == false {
-			fileStat, err := b.StatFile(dst.Path)
-			if err != nil {
-				return err
-			}
-			if fileStat.Exists {
+	if force == false {
+		if exists, err := b.Exists(dst); err != nil {
+			return err
+		} else if exists {
+			if dst.Scheme == BlobStoreUrlScheme {
 				return errors.New("Destination file already exists on blobstore; use --force to overwrite")
 			}
+
+			return errors.New("Destination file already exists on local machine; use --force to overwrite")
 		}
+	}
+
+	if src.Scheme == BlobStoreUrlScheme {
+		return b.DownloadFile(src.Path, dst.Path)
+	} else {
 		return b.UploadFile(dst.Path, src.Path, "")
 	}
 }
@@ -177,7 +175,7 @@ func (b *BlobStoreClient) DeleteFile(path string) error {
 	return b.apiClient.DeleteFile(path)
 }
 
-func (b *BlobStoreClient) Exists(url_ url.URL) (bool, error) {
+func (b *BlobStoreClient) Exists(url_ *url.URL) (bool, error) {
 	if url_.Scheme == "blob" {
 		f, err := b.StatFile(url_.Path)
 		if err != nil {
