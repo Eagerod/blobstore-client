@@ -25,12 +25,16 @@ func newLsCommand(client blob.IBlobStoreClient) *cobra.Command {
 			prefix := ""
 
 			if len(args) == 1 {
-				lsArg := newBlobParsedArg(args[0])
-				if !lsArg.isRemote {
+				lsArg, err := newBlobParsedArg(args[0])
+				if err != nil {
+					return err
+				}
+
+				if lsArg.Scheme != BlobStoreUrlScheme {
 					return errors.New("Must start remote ls path with blob:/")
 				}
 
-				prefix = lsArg.path
+				prefix = lsArg.Path
 			}
 
 			files, err := client.ListPrefix(prefix, recursive)

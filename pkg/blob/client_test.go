@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -72,12 +73,24 @@ const (
 	RemoteTestDeleteHttpMethod      = "DELETE"
 )
 
+var RemoteTestURL *url.URL
+
 func testClient() *BlobStoreClient {
 	cred := credential_provider.DirectCredentialProvider{
 		ReadAcl: RemoteTestReadSecret,
 		WriteAcl: RemoteTestWriteSecret,
 	}
 	return NewBlobStoreClient(RemoteTestBaseUrl, &cred)
+}
+
+func TestMain(m *testing.M) {
+	var err error
+	RemoteTestURL, err = url.Parse(fmt.Sprintf("%s:/%s", BlobStoreUrlScheme, RemoteTestFilename))
+	if err != nil {
+		panic(err)
+	}
+	code := m.Run()
+	os.Exit(code)
 }
 
 func TestCreation(t *testing.T) {
@@ -110,7 +123,7 @@ func TestUploadRequest(t *testing.T) {
 	}
 
 	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{[]HttpMockedMethod{httpMock}}
-	err := api.UploadFile(RemoteTestFilename, LocalTestFilePath, RemoteTestFileManualMimeType)
+	err := api.UploadFile(RemoteTestURL, LocalTestFilePath, RemoteTestFileManualMimeType)
 	assert.Nil(t, err)
 }
 
@@ -144,7 +157,7 @@ func TestDownloadRequest(t *testing.T) {
 	assert.Nil(t, err)
 	tempFile.Close()
 
-	err = api.DownloadFile(RemoteTestFilename, tempFile.Name())
+	err = api.DownloadFile(RemoteTestURL, tempFile.Name())
 	assert.Nil(t, err)
 
 	tempFile, err = os.Open(tempFile.Name())
@@ -193,7 +206,7 @@ func TestDownloadRequestNonExistentDirectory(t *testing.T) {
 	assert.Nil(t, err)
 
 	tempFilePath := filepath.Join(tempDir, "nested_directory", "temp_file")
-	err = api.DownloadFile(RemoteTestFilename, tempFilePath)
+	err = api.DownloadFile(RemoteTestURL, tempFilePath)
 	assert.Nil(t, err)
 
 	tempFile, err := os.Open(tempFilePath)
@@ -236,7 +249,7 @@ func TestStatRequest(t *testing.T) {
 
 	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{[]HttpMockedMethod{httpMock}}
 
-	fileStat, err := api.StatFile(RemoteTestFilename)
+	fileStat, err := api.StatFile(RemoteTestURL)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "", fileStat.Path)
@@ -314,7 +327,7 @@ func TestAppendStringRequest(t *testing.T) {
 	assert.Nil(t, err)
 	tempFile.Close()
 
-	err = api.AppendString(RemoteTestFilename, stringToAppend)
+	err = api.AppendString(RemoteTestURL, stringToAppend)
 	assert.Nil(t, err)
 }
 
@@ -382,7 +395,7 @@ func TestAppendFileRequest(t *testing.T) {
 	assert.Nil(t, err)
 	tempFile.Close()
 
-	err = api.AppendFile(RemoteTestFilename, LocalTestFilePath)
+	err = api.AppendFile(RemoteTestURL, LocalTestFilePath)
 	assert.Nil(t, err)
 }
 
@@ -435,6 +448,6 @@ func TestDeleteRequest(t *testing.T) {
 
 	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{[]HttpMockedMethod{httpMock}}
 
-	err := api.DeleteFile(RemoteTestFilename)
+	err := api.DeleteFile(RemoteTestURL)
 	assert.Nil(t, err)
 }

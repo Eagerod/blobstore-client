@@ -1,7 +1,7 @@
 package blobapi
 
 import (
-	"strings"
+	"net/url"
 )
 
 import (
@@ -20,15 +20,10 @@ type blobParsedArg struct {
 	path     string
 }
 
-func newBlobParsedArg(arg string) *blobParsedArg {
-	rv := blobParsedArg{false, arg}
+const BlobStoreUrlScheme string = "blob"
 
-	if strings.HasPrefix(arg, "blob:/") {
-		rv.isRemote = true
-		rv.path = strings.Replace(rv.path, "blob:/", "", 1)
-	}
-
-	return &rv
+func newBlobParsedArg(arg string) (*url.URL, error) {
+	return url.Parse(arg)
 }
 
 func Execute() error {

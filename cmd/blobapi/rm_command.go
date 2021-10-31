@@ -19,13 +19,16 @@ func newRmCommand(client blob.IBlobStoreClient) *cobra.Command {
 		Long:  "Delete a file from the blobstore",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			rmArg := newBlobParsedArg(args[0])
+			rmArg, err := newBlobParsedArg(args[0])
+			if err != nil {
+				return err
+			}
 
-			if !rmArg.isRemote {
+			if rmArg.Scheme != BlobStoreUrlScheme {
 				return errors.New("Cannot delete a local file")
 			}
 
-			return client.DeleteFile(rmArg.path)
+			return client.DeleteFile(rmArg)
 		},
 	}
 
