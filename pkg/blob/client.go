@@ -31,7 +31,7 @@ type IBlobStoreClient interface {
 	GetFileContents(path string) (string, error)
 	DownloadFile(path string, dest string) error
 
-	StatFile(path string) (*BlobFileStat, error)
+	StatFile(url_ *url.URL) (*BlobFileStat, error)
 
 	AppendStream(path string, stream *bufio.Reader) error
 	AppendString(path string, value string) error
@@ -39,7 +39,7 @@ type IBlobStoreClient interface {
 
 	ListPrefix(prefix string, recursive bool) ([]string, error)
 
-	DeleteFile(url *url.URL) error
+	DeleteFile(url_ *url.URL) error
 
 	Exists(url_ *url.URL) (bool, error)
 }
@@ -136,8 +136,8 @@ func (b *BlobStoreClient) Cat(src *url.URL) error {
 	return nil
 }
 
-func (b *BlobStoreClient) StatFile(path string) (*BlobFileStat, error) {
-	return b.apiClient.GetStat(path)
+func (b *BlobStoreClient) StatFile(url_ *url.URL) (*BlobFileStat, error) {
+	return b.apiClient.GetStat(url_.Path)
 }
 
 func (b *BlobStoreClient) AppendStream(path string, stream *bufio.Reader) error {
@@ -177,7 +177,7 @@ func (b *BlobStoreClient) DeleteFile(url *url.URL) error {
 
 func (b *BlobStoreClient) Exists(url_ *url.URL) (bool, error) {
 	if url_.Scheme == "blob" {
-		f, err := b.StatFile(url_.Path)
+		f, err := b.StatFile(url_)
 		if err != nil {
 			return false, err
 		}

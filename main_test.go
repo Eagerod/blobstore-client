@@ -388,7 +388,7 @@ func TestCommandLineInterfaceDelete(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "", string(output))
 
-	stat, err := api.StatFile(remotePath)
+	stat, err := api.StatFile(toURL(remotePath))
 	assert.Nil(t, err)
 
 	assert.Equal(t, stat.Exists, false)
@@ -414,7 +414,7 @@ func TestCommandLineInterfaceDeleteFails(t *testing.T) {
 	expectedOutput := "Error: Blobstore Delete Failed (403): \n" + blobCliHelpStrings["rm"] + "\n"
 	assert.Equal(t, expectedOutput, string(output))
 
-	stat, err := api.StatFile(remotePath)
+	stat, err := api.StatFile(toURL(remotePath))
 	assert.Nil(t, err)
 
 	assert.Equal(t, stat.Exists, true)

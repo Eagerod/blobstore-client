@@ -249,7 +249,7 @@ func TestStatRequest(t *testing.T) {
 
 	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{[]HttpMockedMethod{httpMock}}
 
-	fileStat, err := api.StatFile(RemoteTestFilename)
+	fileStat, err := api.StatFile(RemoteTestURL)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "", fileStat.Path)
