@@ -26,7 +26,7 @@ type IBlobStoreClient interface {
 	Cat(src *url.URL) error
 	Copy(src *url.URL, dst *url.URL, force bool) error
 
-	UploadFile(path string, source string, contentType string) error
+	UploadFile(url_ *url.URL, source string, contentType string) error
 
 	GetFileContents(path string) (string, error)
 	DownloadFile(path string, dest string) error
@@ -76,11 +76,11 @@ func (b *BlobStoreClient) Copy(src *url.URL, dst *url.URL, force bool) error {
 	if src.Scheme == BlobStoreUrlScheme {
 		return b.DownloadFile(src.Path, dst.Path)
 	} else {
-		return b.UploadFile(dst.Path, src.Path, "")
+		return b.UploadFile(dst, src.Path, "")
 	}
 }
 
-func (b *BlobStoreClient) UploadFile(path string, source string, contentType string) error {
+func (b *BlobStoreClient) UploadFile(url_ *url.URL, source string, contentType string) error {
 	file, err := os.Open(source)
 	defer file.Close()
 
@@ -89,7 +89,7 @@ func (b *BlobStoreClient) UploadFile(path string, source string, contentType str
 	}
 
 	fileReader := bufio.NewReader(file)
-	return b.apiClient.UploadStream(path, fileReader, contentType)
+	return b.apiClient.UploadStream(url_.Path, fileReader, contentType)
 }
 
 func (b *BlobStoreClient) GetFileContents(path string) (string, error) {

@@ -123,7 +123,7 @@ func TestUploadRequest(t *testing.T) {
 	}
 
 	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{[]HttpMockedMethod{httpMock}}
-	err := api.UploadFile(RemoteTestFilename, LocalTestFilePath, RemoteTestFileManualMimeType)
+	err := api.UploadFile(RemoteTestURL, LocalTestFilePath, RemoteTestFileManualMimeType)
 	assert.Nil(t, err)
 }
 

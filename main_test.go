@@ -159,7 +159,7 @@ func TestCommandLineInterfaceUploadAlreadyExists(t *testing.T) {
 	remoteCliPath := getTestFileCliPath(remotePath)
 
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	err := api.UploadFile(remotePath, makefilePath, "text/plain")
+	err := api.UploadFile(toURL(remotePath), makefilePath, "text/plain")
 	assert.Nil(t, err)
 	defer api.DeleteFile(toURL(remotePath))
 
@@ -180,7 +180,7 @@ func TestCommandLineInterfaceUploadFails(t *testing.T) {
 	remoteCliPath := getTestFileCliPath(remotePath)
 
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	err := api.UploadFile(remotePath, makefilePath, "text/plain")
+	err := api.UploadFile(toURL(remotePath), makefilePath, "text/plain")
 	assert.Nil(t, err)
 	defer api.DeleteFile(toURL(remotePath))
 
@@ -201,7 +201,7 @@ func TestCommandLineInterfaceDownload(t *testing.T) {
 	remoteCliPath := getTestFileCliPath(remotePath)
 
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remotePath, makefilePath, "text/plain")
+	api.UploadFile(toURL(remotePath), makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "cp", remoteCliPath, "../Makefile2")
 	cmd.Env = makeEnv(testingAccessToken)
@@ -229,7 +229,7 @@ func TestCommandLineInterfaceDownloadToSdtout(t *testing.T) {
 	remoteCliPath := getTestFileCliPath(remotePath)
 
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remotePath, makefilePath, "text/plain")
+	api.UploadFile(toURL(remotePath), makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "cp", remoteCliPath)
 	cmd.Env = makeEnv(testingAccessToken)
@@ -280,7 +280,7 @@ func TestCommandLineInterfaceAppend(t *testing.T) {
 	remoteCliPath := getTestFileCliPath(remotePath)
 
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remotePath, makefilePath, "text/plain")
+	api.UploadFile(toURL(remotePath), makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "append", remoteCliPath, "--string", "something extra")
 	cmd.Env = makeEnv(testingAccessToken)
@@ -318,7 +318,7 @@ func TestCommandLineInterfaceList(t *testing.T) {
 	remotePath := getTestFilePath()
 
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remotePath, makefilePath, "text/plain")
+	api.UploadFile(toURL(remotePath), makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "ls", "blob:/clientlib")
 	cmd.Env = makeEnv(testingAccessToken)
@@ -346,7 +346,7 @@ func TestCommandLineInterfaceListRecursive(t *testing.T) {
 	remotePath := getTestFilePath()
 
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remotePath, makefilePath, "text/plain")
+	api.UploadFile(toURL(remotePath), makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "ls", "blob:/clientlib", "-r")
 	cmd.Env = makeEnv(testingAccessToken)
@@ -375,7 +375,7 @@ func TestCommandLineInterfaceDelete(t *testing.T) {
 	remoteCliPath := getTestFileCliPath(remotePath)
 
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	api.UploadFile(remotePath, makefilePath, "text/plain")
+	api.UploadFile(toURL(remotePath), makefilePath, "text/plain")
 
 	cmd := exec.Command(blobBinPath, "rm", remoteCliPath)
 	cmd.Env = makeEnv(testingAccessToken)
@@ -399,7 +399,7 @@ func TestCommandLineInterfaceDeleteFails(t *testing.T) {
 	remoteCliPath := getTestFileCliPath(remotePath)
 
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	err := api.UploadFile(remotePath, makefilePath, "text/plain")
+	err := api.UploadFile(toURL(remotePath), makefilePath, "text/plain")
 	assert.Nil(t, err)
 	defer api.DeleteFile(toURL(remotePath))
 
