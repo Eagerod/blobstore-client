@@ -28,7 +28,7 @@ func newRmCommand(client blob.IBlobStoreClient) *cobra.Command {
 				return errors.New("Cannot delete a local file")
 			}
 
-			return client.DeleteFile(rmArg.Path)
+			return client.DeleteFile(rmArg)
 		},
 	}
 

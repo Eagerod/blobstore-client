@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -72,12 +73,24 @@ const (
 	RemoteTestDeleteHttpMethod      = "DELETE"
 )
 
+var RemoteTestURL *url.URL
+
 func testClient() *BlobStoreClient {
 	cred := credential_provider.DirectCredentialProvider{
 		ReadAcl: RemoteTestReadSecret,
 		WriteAcl: RemoteTestWriteSecret,
 	}
 	return NewBlobStoreClient(RemoteTestBaseUrl, &cred)
+}
+
+func TestMain(m *testing.M) {
+	var err error
+	RemoteTestURL, err = url.Parse(fmt.Sprintf("%s:/%s", BlobStoreUrlScheme, RemoteTestFilename))
+	if err != nil {
+		panic(err)
+	}
+	code := m.Run()
+	os.Exit(code)
 }
 
 func TestCreation(t *testing.T) {
@@ -435,6 +448,6 @@ func TestDeleteRequest(t *testing.T) {
 
 	api.apiClient.(*BlobStoreApiClient).http = &TestDrivenHttpClient{[]HttpMockedMethod{httpMock}}
 
-	err := api.DeleteFile(RemoteTestFilename)
+	err := api.DeleteFile(RemoteTestURL)
 	assert.Nil(t, err)
 }

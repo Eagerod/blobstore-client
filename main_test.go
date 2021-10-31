@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -56,6 +57,15 @@ func getTestFilePath() string {
 
 func getTestFileCliPath(base string) string {
 	return path.Join("blob:", base)
+}
+
+func toURL(path string) *url.URL {
+	url, err := url.Parse(path)
+	if err != nil {
+		panic(err)
+	}
+
+	return url
 }
 
 func TestMain(m *testing.M) {
@@ -116,7 +126,7 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	contents, err := api.GetFileContents(remotePath)
 	assert.Nil(t, err)
-	defer api.DeleteFile(remotePath)
+	defer api.DeleteFile(toURL(remotePath))
 
 	assert.Equal(t, string(*makefileBytes), contents)
 }
@@ -139,7 +149,7 @@ func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	contents, err := api.GetFileContents(remotePath)
 	assert.Nil(t, err)
-	defer api.DeleteFile(remotePath)
+	defer api.DeleteFile(toURL(remotePath))
 
 	assert.Equal(t, string(*makefileBytes), contents)
 }
@@ -151,7 +161,7 @@ func TestCommandLineInterfaceUploadAlreadyExists(t *testing.T) {
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	err := api.UploadFile(remotePath, makefilePath, "text/plain")
 	assert.Nil(t, err)
-	defer api.DeleteFile(remotePath)
+	defer api.DeleteFile(toURL(remotePath))
 
 	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteCliPath, "--type", "text/plain")
 	cmd.Env = makeEnv(testingAccessToken)
@@ -172,7 +182,7 @@ func TestCommandLineInterfaceUploadFails(t *testing.T) {
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	err := api.UploadFile(remotePath, makefilePath, "text/plain")
 	assert.Nil(t, err)
-	defer api.DeleteFile(remotePath)
+	defer api.DeleteFile(toURL(remotePath))
 
 	cmd := exec.Command(blobBinPath, "cp", makefilePath, remoteCliPath, "--type", "text/plain", "--force")
 	cmd.Env = makeEnv("")
@@ -391,7 +401,7 @@ func TestCommandLineInterfaceDeleteFails(t *testing.T) {
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
 	err := api.UploadFile(remotePath, makefilePath, "text/plain")
 	assert.Nil(t, err)
-	defer api.DeleteFile(remotePath)
+	defer api.DeleteFile(toURL(remotePath))
 
 	cmd := exec.Command(blobBinPath, "rm", remoteCliPath)
 	cmd.Env = makeEnv("")

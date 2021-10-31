@@ -39,7 +39,7 @@ type IBlobStoreClient interface {
 
 	ListPrefix(prefix string, recursive bool) ([]string, error)
 
-	DeleteFile(path string) error
+	DeleteFile(url *url.URL) error
 
 	Exists(url_ *url.URL) (bool, error)
 }
@@ -171,8 +171,8 @@ func (b *BlobStoreClient) ListPrefix(prefix string, recursive bool) ([]string, e
 	return b.apiClient.ListPrefix(prefix, recursive)
 }
 
-func (b *BlobStoreClient) DeleteFile(path string) error {
-	return b.apiClient.DeleteFile(path)
+func (b *BlobStoreClient) DeleteFile(url *url.URL) error {
+	return b.apiClient.DeleteFile(url.Path)
 }
 
 func (b *BlobStoreClient) Exists(url_ *url.URL) (bool, error) {
