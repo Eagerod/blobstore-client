@@ -28,14 +28,14 @@ type IBlobStoreClient interface {
 
 	UploadFile(url_ *url.URL, source string, contentType string) error
 
-	GetFileContents(path string) (string, error)
-	DownloadFile(path string, dest string) error
+	GetFileContents(url_ *url.URL) (string, error)
+	DownloadFile(url_ *url.URL, dest string) error
 
 	StatFile(url_ *url.URL) (*BlobFileStat, error)
 
-	AppendStream(path string, stream *bufio.Reader) error
-	AppendString(path string, value string) error
-	AppendFile(path string, source string) error
+	AppendStream(url_ *url.URL, stream *bufio.Reader) error
+	AppendString(url_ *url.URL, value string) error
+	AppendFile(url_ *url.URL, source string) error
 
 	ListPrefix(prefix string, recursive bool) ([]string, error)
 
@@ -74,7 +74,7 @@ func (b *BlobStoreClient) Copy(src *url.URL, dst *url.URL, force bool) error {
 	}
 
 	if src.Scheme == BlobStoreUrlScheme {
-		return b.DownloadFile(src.Path, dst.Path)
+		return b.DownloadFile(src, dst.Path)
 	} else {
 		return b.UploadFile(dst, src.Path, "")
 	}
@@ -92,8 +92,8 @@ func (b *BlobStoreClient) UploadFile(url_ *url.URL, source string, contentType s
 	return b.apiClient.UploadStream(url_.Path, fileReader, contentType)
 }
 
-func (b *BlobStoreClient) GetFileContents(path string) (string, error) {
-	file, err := b.apiClient.GetFile(path)
+func (b *BlobStoreClient) GetFileContents(url_ *url.URL) (string, error) {
+	file, err := b.apiClient.GetFile(url_.Path)
 	if err != nil {
 		return "", err
 	}
@@ -106,8 +106,8 @@ func (b *BlobStoreClient) GetFileContents(path string) (string, error) {
 	return string(bodyBytes), nil
 }
 
-func (b *BlobStoreClient) DownloadFile(path, dest string) error {
-	str, err := b.GetFileContents(path)
+func (b *BlobStoreClient) DownloadFile(url_ *url.URL, dest string) error {
+	str, err := b.GetFileContents(url_)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (b *BlobStoreClient) Cat(src *url.URL) error {
 		return errors.New("Must download files from blob:/")
 	}
 
-	str, err := b.GetFileContents(src.Path)
+	str, err := b.GetFileContents(src)
 	if err != nil {
 		return err
 	}
@@ -140,22 +140,22 @@ func (b *BlobStoreClient) StatFile(url_ *url.URL) (*BlobFileStat, error) {
 	return b.apiClient.GetStat(url_.Path)
 }
 
-func (b *BlobStoreClient) AppendStream(path string, stream *bufio.Reader) error {
-	f, err := b.apiClient.GetFile(path)
+func (b *BlobStoreClient) AppendStream(url_ *url.URL, stream *bufio.Reader) error {
+	f, err := b.apiClient.GetFile(url_.Path)
 	if err != nil {
 		return err
 	}
 
 	multiStream := bufio.NewReader(io.MultiReader(*f.contents, stream))
-	return b.apiClient.UploadStream(path, multiStream, f.info.MimeType)
+	return b.apiClient.UploadStream(url_.Path, multiStream, f.info.MimeType)
 }
 
-func (b *BlobStoreClient) AppendString(path string, value string) error {
+func (b *BlobStoreClient) AppendString(url_ *url.URL, value string) error {
 	stringReader := bufio.NewReader(strings.NewReader(value))
-	return b.AppendStream(path, stringReader)
+	return b.AppendStream(url_, stringReader)
 }
 
-func (b *BlobStoreClient) AppendFile(path string, source string) error {
+func (b *BlobStoreClient) AppendFile(url_ *url.URL, source string) error {
 	file, err := os.Open(source)
 	defer file.Close()
 
@@ -164,7 +164,7 @@ func (b *BlobStoreClient) AppendFile(path string, source string) error {
 	}
 
 	fileReader := bufio.NewReader(file)
-	return b.AppendStream(path, fileReader)
+	return b.AppendStream(url_, fileReader)
 }
 
 func (b *BlobStoreClient) ListPrefix(prefix string, recursive bool) ([]string, error) {

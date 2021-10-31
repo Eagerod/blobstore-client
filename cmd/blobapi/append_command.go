@@ -34,7 +34,7 @@ func newAppendCommand(client blob.IBlobStoreClient) *cobra.Command {
 				return errors.New("Cannot append to local file")
 			}
 
-			return client.AppendString(appendArg.Path, appendString)
+			return client.AppendString(appendArg, appendString)
 		},
 	}
 

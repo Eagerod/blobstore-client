@@ -157,7 +157,7 @@ func TestDownloadRequest(t *testing.T) {
 	assert.Nil(t, err)
 	tempFile.Close()
 
-	err = api.DownloadFile(RemoteTestFilename, tempFile.Name())
+	err = api.DownloadFile(RemoteTestURL, tempFile.Name())
 	assert.Nil(t, err)
 
 	tempFile, err = os.Open(tempFile.Name())
@@ -206,7 +206,7 @@ func TestDownloadRequestNonExistentDirectory(t *testing.T) {
 	assert.Nil(t, err)
 
 	tempFilePath := filepath.Join(tempDir, "nested_directory", "temp_file")
-	err = api.DownloadFile(RemoteTestFilename, tempFilePath)
+	err = api.DownloadFile(RemoteTestURL, tempFilePath)
 	assert.Nil(t, err)
 
 	tempFile, err := os.Open(tempFilePath)
@@ -327,7 +327,7 @@ func TestAppendStringRequest(t *testing.T) {
 	assert.Nil(t, err)
 	tempFile.Close()
 
-	err = api.AppendString(RemoteTestFilename, stringToAppend)
+	err = api.AppendString(RemoteTestURL, stringToAppend)
 	assert.Nil(t, err)
 }
 
@@ -395,7 +395,7 @@ func TestAppendFileRequest(t *testing.T) {
 	assert.Nil(t, err)
 	tempFile.Close()
 
-	err = api.AppendFile(RemoteTestFilename, LocalTestFilePath)
+	err = api.AppendFile(RemoteTestURL, LocalTestFilePath)
 	assert.Nil(t, err)
 }
 

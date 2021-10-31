@@ -124,7 +124,7 @@ func TestCommandLineInterfaceUpload(t *testing.T) {
 	assert.Equal(t, "", string(output))
 
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	contents, err := api.GetFileContents(remotePath)
+	contents, err := api.GetFileContents(toURL(remotePath))
 	assert.Nil(t, err)
 	defer api.DeleteFile(toURL(remotePath))
 
@@ -147,7 +147,7 @@ func TestCommandLineInterfaceUploadNoContentType(t *testing.T) {
 	assert.Equal(t, "", string(output))
 
 	api := blob.NewBlobStoreClient(blobstoreBaseUrl, &credential_provider.DirectCredentialProvider{testingAccessToken, testingAccessToken})
-	contents, err := api.GetFileContents(remotePath)
+	contents, err := api.GetFileContents(toURL(remotePath))
 	assert.Nil(t, err)
 	defer api.DeleteFile(toURL(remotePath))
 
@@ -293,7 +293,7 @@ func TestCommandLineInterfaceAppend(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "", string(output))
 
-	contents, err := api.GetFileContents(remotePath)
+	contents, err := api.GetFileContents(toURL(remotePath))
 	assert.Nil(t, err)
 
 	assert.Equal(t, string(*makefileBytes)+"something extra", contents)
