@@ -13,7 +13,7 @@ import (
 )
 
 import (
-	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/credential_provider"
+	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/pkg/credential_provider"
 )
 
 const BlobStoreUrlScheme string = "blob"

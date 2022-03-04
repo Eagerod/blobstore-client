@@ -10,7 +10,7 @@ import (
 )
 
 import (
-	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/blob"
+	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/pkg/blob"
 )
 
 func newLsCommand(client blob.IBlobStoreClient) *cobra.Command {

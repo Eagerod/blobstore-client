@@ -18,8 +18,8 @@ import (
 )
 
 import (
-	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/blob"
-	"gitea.internal.aleemhaji.com/aleem/blobapi/pkg/credential_provider"
+	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/pkg/blob"
+	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/pkg/credential_provider"
 )
 
 // NOTE: This package expects a fresh binary to have just been installed on the

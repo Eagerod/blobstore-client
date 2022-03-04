@@ -1,4 +1,4 @@
-module gitea.internal.aleemhaji.com/aleem/blobapi
+module gitea.internal.aleemhaji.com/aleem/blobstore-cli
 
 go 1.16
 

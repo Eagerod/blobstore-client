@@ -5,7 +5,7 @@ import (
 )
 
 import (
-	"gitea.internal.aleemhaji.com/aleem/blobapi/cmd/blobapi"
+	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/cmd/blobapi"
 )
 
 func main() {
