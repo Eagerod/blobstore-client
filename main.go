@@ -5,7 +5,7 @@ import (
 )
 
 import (
-	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/cmd/blobapi"
+	"github.com/Eagerod/blobstore-client/cmd/blobapi"
 )
 
 func main() {

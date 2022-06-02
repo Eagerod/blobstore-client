@@ -9,8 +9,8 @@ import (
 )
 
 import (
-	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/pkg/blob"
-	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/pkg/credential_provider"
+	"github.com/Eagerod/blobstore-client/pkg/blob"
+	"github.com/Eagerod/blobstore-client/pkg/credential_provider"
 )
 
 const BlobStoreDefaultUrlBase = "https://blob.aleemhaji.com"

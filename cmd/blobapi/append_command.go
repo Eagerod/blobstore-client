@@ -9,7 +9,7 @@ import (
 )
 
 import (
-	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/pkg/blob"
+	"github.com/Eagerod/blobstore-client/pkg/blob"
 )
 
 func newAppendCommand(client blob.IBlobStoreClient) *cobra.Command {

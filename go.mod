@@ -1,4 +1,4 @@
-module gitea.internal.aleemhaji.com/aleem/blobstore-cli
+module github.com/Eagerod/blobstore-client
 
 go 1.16
 

@@ -18,7 +18,7 @@ import (
 )
 
 import (
-	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/pkg/credential_provider"
+	"github.com/Eagerod/blobstore-client/pkg/credential_provider"
 )
 
 func testApiClient() *BlobStoreApiClient {

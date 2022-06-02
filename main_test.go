@@ -18,8 +18,8 @@ import (
 )
 
 import (
-	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/pkg/blob"
-	"gitea.internal.aleemhaji.com/aleem/blobstore-cli/pkg/credential_provider"
+	"github.com/Eagerod/blobstore-client/pkg/blob"
+	"github.com/Eagerod/blobstore-client/pkg/credential_provider"
 )
 
 // NOTE: This package expects a fresh binary to have just been installed on the
