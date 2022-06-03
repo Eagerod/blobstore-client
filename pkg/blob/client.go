@@ -98,7 +98,7 @@ func (b *BlobStoreClient) GetFileContents(url_ *url.URL) (string, error) {
 		return "", err
 	}
 
-	bodyBytes, err := ioutil.ReadAll(*file.contents)
+	bodyBytes, err := ioutil.ReadAll(file.Contents)
 	if err != nil {
 		return "", err
 	}
@@ -146,8 +146,8 @@ func (b *BlobStoreClient) AppendStream(url_ *url.URL, stream *bufio.Reader) erro
 		return err
 	}
 
-	multiStream := bufio.NewReader(io.MultiReader(*f.contents, stream))
-	return b.apiClient.UploadStream(url_.Path, multiStream, f.info.MimeType)
+	multiStream := bufio.NewReader(io.MultiReader(f.Contents, stream))
+	return b.apiClient.UploadStream(url_.Path, multiStream, f.Info.MimeType)
 }
 
 func (b *BlobStoreClient) AppendString(url_ *url.URL, value string) error {

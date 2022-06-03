@@ -202,7 +202,7 @@ func TestGetFile(t *testing.T) {
 	expectedBody, err := ioutil.ReadAll(bufio.NewReader(file))
 	assert.Nil(t, err)
 
-	body, err := ioutil.ReadAll(*blobFile.contents)
+	body, err := ioutil.ReadAll(blobFile.Contents)
 	assert.Nil(t, err)
 
 	assert.Equal(t, expectedBody, body)

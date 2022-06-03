@@ -27,8 +27,8 @@ type BlobFileStat struct {
 }
 
 type BlobFile struct {
-	info 	 BlobFileStat
-	contents *io.Reader
+	Info 	 BlobFileStat
+	Contents io.Reader
 }
 
 type IHttpClient interface {
@@ -226,7 +226,7 @@ func (b *BlobStoreApiClient) GetFile(path string) (*BlobFile, error) {
 	body := response.Body.(io.Reader)
 	rv := BlobFile{
 		stat,
-		&body,
+		body,
 	}
 
 	return &rv, nil
